@@ -1,0 +1,13 @@
+{
+  "name": "figma-excel2wire",
+  "version": "1.0.0",
+  "description": "Import CSV data and map to Figma component properties.",
+  "main": "code.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --watch"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.83.0",
+    "typescript": "^5.0.0"
+  }
+}

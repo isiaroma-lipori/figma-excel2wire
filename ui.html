@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Excel2Wire</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 11px;
+      margin: 0;
+      padding: 16px;
+      background-color: var(--figma-color-bg);
+      color: var(--figma-color-text);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    h1 {
+      font-size: 11px;
+      margin: 0 0 8px 0;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--figma-color-text-secondary);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    label {
+      font-weight: 500;
+    }
+
+    input[type="text"] {
+      padding: 8px;
+      border: 1px solid var(--figma-color-border);
+      background-color: var(--figma-color-bg-secondary);
+      color: var(--figma-color-text);
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    input[type="file"] {
+      font-size: 11px;
+    }
+
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      background-color: var(--figma-color-bg-brand);
+      color: var(--figma-color-text-onbrand);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background-color: var(--figma-color-bg-secondary);
+      color: var(--figma-color-text);
+      border: 1px solid var(--figma-color-border);
+    }
+
+    .mapping-container {
+      margin-top: 8px;
+      border-top: 1px solid var(--figma-color-border);
+      padding-top: 16px;
+    }
+
+    .mapping-row {
+      margin-bottom: 12px;
+    }
+
+    select {
+      width: 100%;
+      padding: 4px;
+      border: 1px solid var(--figma-color-border);
+      background-color: var(--figma-color-bg-secondary);
+      color: var(--figma-color-text);
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .type-mapping-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 8px;
+      padding: 8px;
+      background: var(--figma-color-bg-secondary);
+      border: 1px solid var(--figma-color-border);
+      border-radius: 4px;
+    }
+
+    #message {
+      margin-top: 8px;
+      font-style: italic;
+      color: var(--figma-color-text-danger);
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-group">
+    <label for="csvFile">1. Carica file CSV</label>
+    <input type="file" id="csvFile" accept=".csv">
+  </div>
+
+  <div id="mappingSection" class="mapping-container" style="display: none;">
+    <div class="section-title">
+      <h1>2. Configurazione Colonne</h1>
+    </div>
+    <div id="mappingList" style="margin-bottom: 12px;"></div>
+    
+    <div id="typeMappingSection" style="display: none; margin-top: 16px; border-top: 1px solid var(--figma-color-border); padding-top: 16px;">
+      <h1>3. Mappatura Tipi di Componente</h1>
+      <p style="margin-bottom: 8px; color: var(--figma-color-text-tertiary); font-size: 10px;">Associa i valori della colonna "Tipo" alle Component Keys.</p>
+      <div id="typeMappingList"></div>
+    </div>
+
+    <div id="advancedPropertySection" style="margin-top: 16px; border-top: 1px solid var(--figma-color-border); padding-top: 16px;">
+       <h1>4. Componente Template (opzionale)</h1>
+       <div style="display: flex; gap: 4px;">
+         <input type="text" id="componentKey" style="flex: 1;" placeholder="Chiave per rilevare proprietà...">
+         <button id="getKeyBtn" style="padding: 4px 8px;" class="secondary">Auto</button>
+       </div>
+    </div>
+
+    <button id="importBtn" style="width: 100%; margin-top: 24px; padding: 12px;">GENERA ISTANZE</button>
+  </div>
+
+  <div id="message"></div>
+
+  <script>
+    let csvData = [];
+    let csvHeaders = [];
+    let allProperties = new Map(); // Name -> { name, type, role }
+    let pendingInput = null;
+
+    function parseLine(line) {
+// ... (omitting for brevity in instruction, but I will include it in the tool call)
+      const result = [];
+      let curValue = "";
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') inQuotes = !inQuotes;
+        else if (char === ',' && !inQuotes) {
+          result.push(curValue.trim().replace(/^"|"$/g, ''));
+          curValue = "";
+        } else curValue += char;
+      }
+      result.push(curValue.trim().replace(/^"|"$/g, ''));
+      return result;
+    }
+
+    document.getElementById('csvFile').onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const lines = event.target.result.split(/\r?\n/).filter(line => line.trim() !== "");
+        if (lines.length < 2) { showMessage('CSV non valido.'); return; }
+        csvHeaders = parseLine(lines[0]);
+        csvData = lines.slice(1).map(line => {
+          const values = parseLine(line);
+          const obj = {};
+          csvHeaders.forEach((h, i) => obj[h] = values[i] || "");
+          return obj;
+        });
+        document.getElementById('mappingSection').style.display = 'block';
+        renderMappingTable();
+      };
+      reader.readAsText(file);
+    };
+
+    function renderMappingTable() {
+      const mappingList = document.getElementById('mappingList');
+      // Save current selections
+      const currentSelections = {};
+      document.querySelectorAll('.col-mapping').forEach(s => currentSelections[s.dataset.colName] = s.value);
+      
+      mappingList.innerHTML = '';
+      csvHeaders.forEach(header => {
+        const row = document.createElement('div');
+        row.className = 'mapping-row';
+        row.innerHTML = `<div style="font-weight: 500; margin-bottom: 2px;">${header}</div>`;
+        const select = document.createElement('select');
+        select.className = 'col-mapping';
+        select.dataset.colName = header;
+        
+        const opts = [
+          {v: 'ignore', t: 'Ignora'},
+          {v: 'comp-key', t: 'Usa come: Component Key'},
+          {v: 'comp-type', t: 'Usa come: Component Type'}
+        ];
+        
+        // Add collected properties, prioritizing those with '#'
+        const sortedProps = Array.from(allProperties.values()).sort((a,b) => {
+          if (a.name.startsWith('#') && !b.name.startsWith('#')) return -1;
+          if (!a.name.startsWith('#') && b.name.startsWith('#')) return 1;
+          return a.name.localeCompare(b.name);
+        });
+
+        sortedProps.forEach(p => {
+          let prefix = 'Mappa a: ';
+          if (p.role === 'layer') {
+            prefix = p.type === 'TEXT' ? 'Mappa Testo: ' : 'Mappa Layer: ';
+          }
+          opts.push({v: `${p.role}:${p.name}`, t: `${prefix}${p.name}`});
+        });
+
+        opts.forEach(opt => {
+          const o = document.createElement('option');
+          o.value = opt.v; o.textContent = opt.t;
+          if (currentSelections[header] === opt.v) o.selected = true;
+          else if (!currentSelections[header]) {
+            if (opt.v === 'comp-type' && (header.toLowerCase() === 'component_type' || header.toLowerCase() === 'question_type' || header.toLowerCase() === 'type')) o.selected = true;
+            else if (opt.v.includes(`:${header}`) || opt.v.includes(`:#${header}`)) o.selected = true;
+          }
+          select.appendChild(o);
+        });
+
+        select.onchange = detectTypes;
+        row.appendChild(select);
+        mappingList.appendChild(row);
+      });
+      detectTypes();
+    }
+
+    function detectTypes() {
+      const typeMappingSection = document.getElementById('typeMappingSection');
+      const typeMappingList = document.getElementById('typeMappingList');
+      const typeSelect = Array.from(document.querySelectorAll('.col-mapping')).find(s => s.value === 'comp-type');
+      
+      if (!typeSelect) { typeMappingSection.style.display = 'none'; return; }
+
+      typeMappingSection.style.display = 'block';
+      const colName = typeSelect.dataset.colName;
+      const uniqueValues = Array.from(new Set(csvData.map(row => row[colName]))).filter(v => v !== "");
+      
+      typeMappingList.innerHTML = '';
+      uniqueValues.forEach(val => {
+        const item = document.createElement('div');
+        item.className = 'type-mapping-item';
+        item.innerHTML = `
+          <div style="font-weight: 500; font-size: 10px;">Valore: "${val}"</div>
+          <div style="display: flex; gap: 4px;">
+            <input type="text" class="type-key-input" data-type-val="${val}" style="flex: 1;" placeholder="Component Key...">
+            <button class="small-btn secondary" style="padding: 4px 8px;">Auto</button>
+          </div>
+        `;
+        const input = item.querySelector('input');
+        input.onchange = () => { if (input.value) parent.postMessage({ pluginMessage: { type: 'get-properties', key: input.value } }, '*'); };
+        item.querySelector('button').onclick = () => {
+          pendingInput = input;
+          parent.postMessage({ pluginMessage: { type: 'get-selection-key' } }, '*');
+        };
+        typeMappingList.appendChild(item);
+      });
+    }
+
+    document.getElementById('getKeyBtn').onclick = () => {
+      pendingInput = document.getElementById('componentKey');
+      parent.postMessage({ pluginMessage: { type: 'get-selection-key' } }, '*');
+    };
+
+    document.getElementById('componentKey').onchange = () => {
+      if (document.getElementById('componentKey').value) {
+        parent.postMessage({ pluginMessage: { type: 'get-properties', key: document.getElementById('componentKey').value } }, '*');
+      }
+    };
+
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (msg.type === 'properties-list') {
+        msg.properties.forEach(p => allProperties.set(p.name, p));
+        renderMappingTable();
+      } else if (msg.type === 'selection-key') {
+        if (pendingInput) {
+          pendingInput.value = msg.key;
+          parent.postMessage({ pluginMessage: { type: 'get-properties', key: msg.key } }, '*');
+          pendingInput = null;
+        }
+      } else if (msg.type === 'error') showMessage(msg.message);
+    };
+
+    document.getElementById('importBtn').onclick = () => {
+      const mappings = {};
+      const typeToKeyMap = {};
+      let typeColumn = '';
+      document.querySelectorAll('.col-mapping').forEach(s => {
+        if (s.value !== 'ignore') {
+          mappings[s.dataset.colName] = s.value;
+          if (s.value === 'comp-type') typeColumn = s.dataset.colName;
+        }
+      });
+      if (typeColumn) {
+        document.querySelectorAll('.type-key-input').forEach(i => typeToKeyMap[i.dataset.typeVal] = i.value);
+      }
+      parent.postMessage({ pluginMessage: { 
+        type: 'generate', 
+        data: csvData, 
+        mappings, 
+        typeToKeyMap,
+        templateKey: document.getElementById('componentKey').value 
+      } }, '*');
+    };
+
+    function showMessage(text) {
+      const m = document.getElementById('message');
+      m.textContent = text;
+      setTimeout(() => m.textContent = '', 5000);
+    }
+  </script>
+</body>
+</html>
