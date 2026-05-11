@@ -4,8 +4,16 @@
   <meta charset="utf-8">
   <title>Excel2Wire</title>
   <style>
+    :root {
+      --figma-blue: #18a0fb;
+      --figma-bg: #ffffff;
+      --figma-text: #333333;
+      --figma-border: #e6e6e6;
+      --figma-secondary: #f5f5f5;
+    }
+    
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 11px;
       margin: 0;
       padding: 16px;
@@ -14,38 +22,50 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
+      user-select: none;
     }
 
-    h1 {
+    h1, h2 {
       font-size: 11px;
-      margin: 0 0 8px 0;
+      margin: 0;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--figma-color-text-secondary);
     }
 
+    .step-card {
+      background: var(--figma-color-bg);
+      border: 1px solid var(--figma-color-border);
+      border-radius: 6px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
     }
 
-    label {
-      font-weight: 500;
-    }
+    label { font-weight: 500; font-size: 10px; opacity: 0.8; }
 
-    input[type="text"] {
+    select, input[type="text"] {
+      width: 100%;
       padding: 8px;
       border: 1px solid var(--figma-color-border);
       background-color: var(--figma-color-bg-secondary);
       color: var(--figma-color-text);
       border-radius: 4px;
       font-size: 11px;
+      box-sizing: border-box;
     }
 
-    input[type="file"] {
-      font-size: 11px;
+    input[type="text"]:focus {
+      outline: 1px solid var(--figma-color-bg-brand);
+      border-color: var(--figma-color-bg-brand);
     }
 
     button {
@@ -56,6 +76,7 @@
       color: var(--figma-color-text-onbrand);
       font-weight: 600;
       cursor: pointer;
+      font-size: 11px;
     }
 
     button.secondary {
@@ -64,102 +85,168 @@
       border: 1px solid var(--figma-color-border);
     }
 
-    .mapping-container {
-      margin-top: 8px;
-      border-top: 1px solid var(--figma-color-border);
-      padding-top: 16px;
-    }
+    table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+    th { text-align: left; font-size: 9px; padding-bottom: 4px; color: var(--figma-color-text-tertiary); }
+    td { padding: 4px 0; border-bottom: 1px solid var(--figma-color-border-subtle); }
 
-    .mapping-row {
-      margin-bottom: 12px;
-    }
-
-    select {
-      width: 100%;
-      padding: 4px;
+    /* Accordion Styles */
+    .accordion {
       border: 1px solid var(--figma-color-border);
-      background-color: var(--figma-color-bg-secondary);
-      color: var(--figma-color-text);
       border-radius: 4px;
-      font-size: 11px;
+      margin-top: 8px;
+      overflow: hidden;
     }
-
-    .type-mapping-item {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-bottom: 8px;
-      padding: 8px;
+    .accordion-header {
       background: var(--figma-color-bg-secondary);
-      border: 1px solid var(--figma-color-border);
-      border-radius: 4px;
-    }
-
-    #message {
-      margin-top: 8px;
-      font-style: italic;
-      color: var(--figma-color-text-danger);
-    }
-
-    .section-title {
+      padding: 8px 12px;
+      font-weight: 600;
+      cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
+    .accordion-content {
+      padding: 0 12px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.2s ease-out, padding 0.2s ease-out;
+    }
+    .accordion.open .accordion-content {
+      max-height: 1000px;
+      padding: 12px;
+    }
+    .breadcrumb {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      margin-bottom: 2px;
+    }
+    .breadcrumb span {
+      background: var(--figma-color-bg-tertiary);
+      padding: 1px 4px;
+      border-radius: 2px;
+    }
+    .prop-path { padding: 8px 0; }
+    .chevron { transition: transform 0.2s; font-size: 8px; }
+    .accordion.open .chevron { transform: rotate(180deg); }
+
+    #message { font-size: 10px; color: #f24822; min-height: 14px; }
+    
+    .hidden { display: none !important; }
+
+    .small-btn { padding: 4px 8px; font-size: 9px; }
   </style>
 </head>
 <body>
-  <div class="form-group">
-    <label for="csvFile">1. Carica file CSV</label>
-    <input type="file" id="csvFile" accept=".csv">
+  <!-- Step 1: Loading CSV -->
+  <div class="step-card">
+    <h1>1. Carica file CSV</h1>
+    <div class="form-group">
+      <input type="file" id="csvFile" accept=".csv">
+    </div>
   </div>
 
-  <div id="mappingSection" class="mapping-container" style="display: none;">
-    <div class="section-title">
-      <h1>2. Configurazione Colonne</h1>
+  <!-- Step 2: Selecting Type Column -->
+  <div id="step2" class="step-card hidden">
+    <h1>2. Seleziona Colonna Tipo</h1>
+    <div class="form-group">
+      <label for="typeColSelect">Colonna che identifica il tipo di domanda:</label>
+      <select id="typeColSelect">
+        <option value="">-- Seleziona --</option>
+      </select>
     </div>
-    <div id="mappingList" style="margin-bottom: 12px;"></div>
-    
-    <div id="typeMappingSection" style="display: none; margin-top: 16px; border-top: 1px solid var(--figma-color-border); padding-top: 16px;">
-      <h1>3. Mappatura Tipi di Componente</h1>
-      <p style="margin-bottom: 8px; color: var(--figma-color-text-tertiary); font-size: 10px;">Associa i valori della colonna "Tipo" alle Component Keys.</p>
-      <div id="typeMappingList"></div>
-    </div>
+  </div>
 
-    <div id="advancedPropertySection" style="margin-top: 16px; border-top: 1px solid var(--figma-color-border); padding-top: 16px;">
-       <h1>4. Componente Template (opzionale)</h1>
-       <div style="display: flex; gap: 4px;">
-         <input type="text" id="componentKey" style="flex: 1;" placeholder="Chiave per rilevare proprietà...">
-         <button id="getKeyBtn" style="padding: 4px 8px;" class="secondary">Auto</button>
-       </div>
-    </div>
+  <!-- Step 3: Mapping Types to Components -->
+  <div id="step3" class="step-card hidden">
+    <h1>3. Mappatura Tipi a Componenti</h1>
+    <p style="font-size: 10px; color: var(--figma-color-text-tertiary);">Associa ogni valore trovato nel CSV ad un componente di Figma.</p>
+    <table id="typeMappingTable">
+      <thead>
+        <tr>
+          <th width="40%">Valore CSV</th>
+          <th width="60%">Figma Component Key</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-    <button id="importBtn" style="width: 100%; margin-top: 24px; padding: 12px;">GENERA ISTANZE</button>
+  <!-- Step 4: Field Mapping Accordions -->
+  <div id="step4" class="step-card hidden">
+    <h1>4. Mappatura Proprietà</h1>
+    <div id="accordionsList"></div>
+    <button id="generateBtn" style="margin-top: 16px; width: 100%; height: 40px; font-size: 12px;">GENERA COMPONENTI</button>
   </div>
 
   <div id="message"></div>
 
   <script>
-    let csvData = [];
+    let csvData = { headers: [], data: [] };
     let csvHeaders = [];
-    let allProperties = new Map(); // Name -> { name, type, role }
-    let pendingInput = null;
+    let questionHeaders = []; 
+    let typeMappings = {}; // typeVal -> { componentKey: '', properties: [], fieldMap: {} }
 
-    function parseLine(line) {
-// ... (omitting for brevity in instruction, but I will include it in the tool call)
-      const result = [];
-      let curValue = "";
+    function showMessage(text, isError = true) {
+      const m = document.getElementById('message');
+      m.textContent = text;
+      m.style.color = isError ? '#f24822' : '#10a958';
+      setTimeout(() => m.textContent = '', 5000);
+    }
+
+    function parseCSV(text) {
+      const rows = [];
+      let currentRow = [];
+      let currentField = "";
       let inQuotes = false;
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        if (char === '"') inQuotes = !inQuotes;
-        else if (char === ',' && !inQuotes) {
-          result.push(curValue.trim().replace(/^"|"$/g, ''));
-          curValue = "";
-        } else curValue += char;
+      
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+
+        if (char === '"') {
+          if (inQuotes && nextChar === '"') {
+            currentField += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          currentRow.push(currentField.trim());
+          currentField = "";
+        } else if ((char === '\r' || char === '\n') && !inQuotes) {
+          if (char === '\r' && nextChar === '\n') i++;
+          currentRow.push(currentField.trim());
+          // Only add non-empty rows
+          if (currentRow.length > 0 && (currentRow.length > 1 || currentRow[0] !== "")) {
+            rows.push(currentRow);
+          }
+          currentRow = [];
+          currentField = "";
+        } else {
+          currentField += char;
+        }
       }
-      result.push(curValue.trim().replace(/^"|"$/g, ''));
-      return result;
+      // Handle the last field/row if it doesn't end with a newline
+      if (currentField || currentRow.length > 0) {
+        currentRow.push(currentField.trim());
+        if (currentRow.length > 0 && (currentRow.length > 1 || currentRow[0] !== "")) {
+          rows.push(currentRow);
+        }
+      }
+
+      if (rows.length < 2) return null;
+      const headers = rows[0];
+      const data = rows.slice(1).map(row => {
+        const obj = {};
+        headers.forEach((h, i) => {
+          if (h) obj[h] = row[i] || "";
+        });
+        return obj;
+      });
+      return { headers, data };
     }
 
     document.getElementById('csvFile').onchange = (e) => {
@@ -167,159 +254,294 @@
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (event) => {
-        const lines = event.target.result.split(/\r?\n/).filter(line => line.trim() !== "");
-        if (lines.length < 2) { showMessage('CSV non valido.'); return; }
-        csvHeaders = parseLine(lines[0]);
-        csvData = lines.slice(1).map(line => {
-          const values = parseLine(line);
-          const obj = {};
-          csvHeaders.forEach((h, i) => obj[h] = values[i] || "");
-          return obj;
+        const parsed = parseCSV(event.target.result);
+        if (!parsed) { showMessage("CSV non valido."); return; }
+        
+        csvData = parsed;
+        csvHeaders = parsed.headers;
+        questionHeaders = csvHeaders.filter(h => h.toLowerCase().startsWith('question_'));
+        
+        // Populate Step 2
+        const select = document.getElementById('typeColSelect');
+        select.innerHTML = '<option value="">-- Seleziona --</option>';
+        csvHeaders.forEach(h => {
+          const opt = document.createElement('option');
+          opt.value = h;
+          opt.textContent = h;
+          if (h.toLowerCase() === 'question_type') opt.selected = true;
+          select.appendChild(opt);
         });
-        document.getElementById('mappingSection').style.display = 'block';
-        renderMappingTable();
+
+        document.getElementById('step2').classList.remove('hidden');
+        if (select.value) handleTypeColChange(); 
       };
       reader.readAsText(file);
     };
 
-    function renderMappingTable() {
-      const mappingList = document.getElementById('mappingList');
-      // Save current selections
-      const currentSelections = {};
-      document.querySelectorAll('.col-mapping').forEach(s => currentSelections[s.dataset.colName] = s.value);
+    function handleTypeColChange() {
+      const select = document.getElementById('typeColSelect');
+      const colName = select.value;
+      if (!colName) { 
+        document.getElementById('step3').classList.add('hidden'); 
+        document.getElementById('step4').classList.add('hidden');
+        return; 
+      }
       
-      mappingList.innerHTML = '';
-      csvHeaders.forEach(header => {
-        const row = document.createElement('div');
-        row.className = 'mapping-row';
-        row.innerHTML = `<div style="font-weight: 500; margin-bottom: 2px;">${header}</div>`;
-        const select = document.createElement('select');
-        select.className = 'col-mapping';
-        select.dataset.colName = header;
-        
-        const opts = [
-          {v: 'ignore', t: 'Ignora'},
-          {v: 'comp-key', t: 'Usa come: Component Key'},
-          {v: 'comp-type', t: 'Usa come: Component Type'}
-        ];
-        
-        // Add collected properties, prioritizing those with '#'
-        const sortedProps = Array.from(allProperties.values()).sort((a,b) => {
-          if (a.name.startsWith('#') && !b.name.startsWith('#')) return -1;
-          if (!a.name.startsWith('#') && b.name.startsWith('#')) return 1;
-          return a.name.localeCompare(b.name);
-        });
-
-        sortedProps.forEach(p => {
-          let prefix = 'Mappa a: ';
-          if (p.role === 'layer') {
-            prefix = p.type === 'TEXT' ? 'Mappa Testo: ' : 'Mappa Layer: ';
-          }
-          opts.push({v: `${p.role}:${p.name}`, t: `${prefix}${p.name}`});
-        });
-
-        opts.forEach(opt => {
-          const o = document.createElement('option');
-          o.value = opt.v; o.textContent = opt.t;
-          if (currentSelections[header] === opt.v) o.selected = true;
-          else if (!currentSelections[header]) {
-            if (opt.v === 'comp-type' && (header.toLowerCase() === 'component_type' || header.toLowerCase() === 'question_type' || header.toLowerCase() === 'type')) o.selected = true;
-            else if (opt.v.includes(`:${header}`) || opt.v.includes(`:#${header}`)) o.selected = true;
-          }
-          select.appendChild(o);
-        });
-
-        select.onchange = detectTypes;
-        row.appendChild(select);
-        mappingList.appendChild(row);
-      });
-      detectTypes();
+      const uniqueValues = Array.from(new Set(csvData.data.map(row => row[colName]))).filter(v => v !== "");
+      renderStep3(uniqueValues);
     }
 
-    function detectTypes() {
-      const typeMappingSection = document.getElementById('typeMappingSection');
-      const typeMappingList = document.getElementById('typeMappingList');
-      const typeSelect = Array.from(document.querySelectorAll('.col-mapping')).find(s => s.value === 'comp-type');
-      
-      if (!typeSelect) { typeMappingSection.style.display = 'none'; return; }
+    document.getElementById('typeColSelect').onchange = handleTypeColChange;
 
-      typeMappingSection.style.display = 'block';
-      const colName = typeSelect.dataset.colName;
-      const uniqueValues = Array.from(new Set(csvData.map(row => row[colName]))).filter(v => v !== "");
+    function renderStep3(values) {
+      const tbody = document.querySelector('#typeMappingTable tbody');
+      tbody.innerHTML = '';
       
-      typeMappingList.innerHTML = '';
-      uniqueValues.forEach(val => {
-        const item = document.createElement('div');
-        item.className = 'type-mapping-item';
-        item.innerHTML = `
-          <div style="font-weight: 500; font-size: 10px;">Valore: "${val}"</div>
+      const newMappings = {};
+      values.forEach(val => {
+        // Preserve existing mapping if already present
+        newMappings[val] = typeMappings[val] || { componentKey: '', properties: [], fieldMap: {} };
+      });
+      typeMappings = newMappings;
+
+      values.forEach(val => {
+        const row = document.createElement('tr');
+        const config = typeMappings[val];
+        
+        // Use textContent for safety and quotes for attributes
+        const labelTd = document.createElement('td');
+        const strong = document.createElement('strong');
+        strong.textContent = val;
+        labelTd.appendChild(strong);
+        
+        const inputTd = document.createElement('td');
+        inputTd.innerHTML = `
           <div style="display: flex; gap: 4px;">
-            <input type="text" class="type-key-input" data-type-val="${val}" style="flex: 1;" placeholder="Component Key...">
-            <button class="small-btn secondary" style="padding: 4px 8px;">Auto</button>
+            <input type="text" class="key-input" placeholder="Key...">
+            <button class="small-btn secondary auto-btn">Auto</button>
           </div>
         `;
-        const input = item.querySelector('input');
-        input.onchange = () => { if (input.value) parent.postMessage({ pluginMessage: { type: 'get-properties', key: input.value } }, '*'); };
-        item.querySelector('button').onclick = () => {
-          pendingInput = input;
-          parent.postMessage({ pluginMessage: { type: 'get-selection-key' } }, '*');
+
+        const input = inputTd.querySelector('.key-input');
+        const currentTypeVal = val;
+        input.dataset.type = currentTypeVal; 
+
+        input.onblur = () => {
+          if (input.value && input.value !== typeMappings[currentTypeVal].componentKey) {
+            typeMappings[currentTypeVal].componentKey = input.value;
+            typeMappings[currentTypeVal].properties = [];
+            typeMappings[currentTypeVal].fieldMap = {};
+            console.log('UI manual key entry for:', currentTypeVal, 'Key:', input.value);
+            input.style.opacity = '0.5';
+            parent.postMessage({ pluginMessage: { type: 'get-properties', key: input.value, mappedType: currentTypeVal } }, '*');
+          }
         };
-        typeMappingList.appendChild(item);
+
+        inputTd.querySelector('.auto-btn').onclick = () => {
+          console.log('UI Auto-btn clicked for:', currentTypeVal);
+          parent.postMessage({ pluginMessage: { type: 'get-selection-key', mappedType: currentTypeVal } }, '*');
+        };
+
+        row.appendChild(labelTd);
+        row.appendChild(inputTd);
+        tbody.appendChild(row);
       });
+      document.getElementById('step3').classList.remove('hidden');
     }
-
-    document.getElementById('getKeyBtn').onclick = () => {
-      pendingInput = document.getElementById('componentKey');
-      parent.postMessage({ pluginMessage: { type: 'get-selection-key' } }, '*');
-    };
-
-    document.getElementById('componentKey').onchange = () => {
-      if (document.getElementById('componentKey').value) {
-        parent.postMessage({ pluginMessage: { type: 'get-properties', key: document.getElementById('componentKey').value } }, '*');
-      }
-    };
 
     window.onmessage = (event) => {
       const msg = event.data.pluginMessage;
-      if (msg.type === 'properties-list') {
-        msg.properties.forEach(p => allProperties.set(p.name, p));
-        renderMappingTable();
-      } else if (msg.type === 'selection-key') {
-        if (pendingInput) {
-          pendingInput.value = msg.key;
-          parent.postMessage({ pluginMessage: { type: 'get-properties', key: msg.key } }, '*');
-          pendingInput = null;
+      console.log('UI received message:', msg); // Useful for debugging
+
+      if (msg.type === 'selection-key') {
+        const typeRec = msg.mappedType;
+        const typeCol = document.getElementById('typeColSelect').value;
+        console.log('UI received selection-key for type:', typeRec, 'with key:', msg.key);
+        
+        const inputs = document.querySelectorAll('.key-input');
+        let targetInput = null;
+        for (const input of inputs) {
+          if (input.dataset.type === String(typeRec)) {
+            targetInput = input;
+            break;
+          }
         }
-      } else if (msg.type === 'error') showMessage(msg.message);
+
+        if (targetInput) {
+          targetInput.value = msg.key;
+          targetInput.style.opacity = '0.5';
+          typeMappings[typeRec].componentKey = msg.key;
+          typeMappings[typeRec].properties = [];
+          typeMappings[typeRec].fieldMap = {}; 
+          showMessage(`Chiave ottenuta per "${typeRec}"`, false);
+          parent.postMessage({ pluginMessage: { type: 'get-properties', key: msg.key, mappedType: typeRec } }, '*');
+        } else {
+          console.error('Target input not found for type:', typeRec, 'Available:', Array.from(inputs).map(i => i.dataset.type));
+        }
+      } else if (msg.type === 'properties-list') {
+        const typeRec = msg.mappedType;
+        if (typeMappings[typeRec]) {
+          typeMappings[typeRec].properties = msg.properties;
+          // Restore opacity
+          const inputs = document.querySelectorAll('.key-input');
+          for (const input of inputs) {
+            if (input.dataset.type === String(typeRec)) {
+               input.style.opacity = '1';
+               break;
+            }
+          }
+          renderStep4();
+        }
+      } else if (msg.type === 'error') {
+        showMessage(msg.message);
+      }
     };
 
-    document.getElementById('importBtn').onclick = () => {
-      const mappings = {};
-      const typeToKeyMap = {};
-      let typeColumn = '';
-      document.querySelectorAll('.col-mapping').forEach(s => {
-        if (s.value !== 'ignore') {
-          mappings[s.dataset.colName] = s.value;
-          if (s.value === 'comp-type') typeColumn = s.dataset.colName;
+    function renderStep4() {
+      const list = document.getElementById('accordionsList');
+      if (!list) return;
+
+      const existingStates = {}; // Keep track of open accordions
+      document.querySelectorAll('.accordion').forEach(a => {
+        existingStates[a.dataset.type] = a.classList.contains('open');
+      });
+
+      list.innerHTML = '';
+      const typeCol = document.getElementById('typeColSelect').value;
+      if (!csvData || !csvData.data || csvData.data.length === 0) return;
+
+      let hasMappedComponents = false;
+
+      Object.keys(typeMappings).forEach(typeVal => {
+        const config = typeMappings[typeVal];
+        if (!config.componentKey || config.properties.length === 0) return;
+        hasMappedComponents = true;
+
+        const accordion = document.createElement('div');
+        accordion.className = `accordion ${existingStates[typeVal] ? 'open' : ''}`;
+        accordion.dataset.type = typeVal;
+        
+        const header = document.createElement('div');
+        header.className = 'accordion-header';
+        header.innerHTML = `<span><strong>Tipo:</strong> ${typeVal}</span> <span class="chevron">▼</span>`;
+        
+        const content = document.createElement('div');
+        content.className = 'accordion-content';
+        content.innerHTML = `
+          <table class="mapping-table">
+            <thead>
+              <tr><th width="50%">Gerarchia Figma</th><th width="50%">Colonna CSV</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        `;
+
+        const tbody = content.querySelector('tbody');
+        
+        // Helper function for automapping
+        const getBestMatch = (propName, propPath, allHeaders, valueIdx) => {
+          if (!allHeaders || !Array.isArray(allHeaders)) return '';
+          
+          if (propName === '#value' && valueIdx !== -1) {
+            const targetSuffix = String(valueIdx + 1).padStart(2, '0');
+            const targetCol = `question_answer_option${targetSuffix}`;
+            if (allHeaders.includes(targetCol)) return targetCol;
+          }
+          const cleanP = propName.toLowerCase().replace(/^#/, '');
+          let match = allHeaders.find(h => h && h.toLowerCase().replace(/^question_/, '') === cleanP);
+          if (match) return match;
+          match = allHeaders.find(h => h && h.toLowerCase().includes(cleanP));
+          return match || '';
+        };
+
+        let valueCount = 0;
+        config.properties.forEach(prop => {
+          const valueIdx = (prop.name === '#value') ? valueCount++ : -1;
+          const tr = document.createElement('tr');
+          const targetKey = prop.path || prop.name;
+          
+          let selectedValue = config.fieldMap[targetKey] || "";
+          // Map if empty
+          if (!selectedValue) {
+            const bestMatch = getBestMatch(prop.name, prop.path, csvData.headers, valueIdx);
+            if (bestMatch) {
+              selectedValue = bestMatch;
+              config.fieldMap[targetKey] = bestMatch;
+            }
+          }
+
+          const breadcrumb = targetKey.split(' > ').map(p => `<span>${p}</span>`).join(' &raquo; ');
+
+          tr.innerHTML = `
+            <td class="prop-path">
+              <div class="breadcrumb">${breadcrumb}</div>
+              <small style="opacity: 0.5;">${prop.role}</small>
+            </td>
+            <td>
+              <select class="field-select">
+                <option value="">-- Ignora --</option>
+                ${csvData.headers.map(h => 
+                  `<option value="${h}" ${h === selectedValue ? 'selected' : ''}>${h}</option>`
+                ).join('')}
+              </select>
+            </td>
+            <td>
+              <button class="secondary auto-btn">Auto</button>
+            </td>
+          `;
+
+          const select = tr.querySelector('.field-select');
+          select.onchange = (e) => {
+            config.fieldMap[targetKey] = e.target.value;
+          };
+
+          const autoBtn = tr.querySelector('.auto-btn');
+          autoBtn.onclick = () => {
+             const bestMatch = getBestMatch(prop.name, prop.path, csvData.headers, valueIdx);
+             if (bestMatch) {
+               select.value = bestMatch;
+               config.fieldMap[targetKey] = bestMatch;
+             }
+          };
+
+          tbody.appendChild(tr);
+        });
+
+        header.onclick = () => {
+          accordion.classList.toggle('open');
+        };
+
+        accordion.appendChild(header);
+        accordion.appendChild(content);
+        list.appendChild(accordion);
+      });
+
+      if (hasMappedComponents) {
+        document.getElementById('step4').classList.remove('hidden');
+      }
+    }
+
+    document.getElementById('generateBtn').onclick = () => {
+      const typeColumn = document.getElementById('typeColSelect').value;
+      const finalMapping = {};
+      
+      Object.keys(typeMappings).forEach(typeVal => {
+        const config = typeMappings[typeVal];
+        if (config.componentKey) {
+          finalMapping[typeVal] = {
+            componentKey: config.componentKey,
+            fields: config.fieldMap
+          };
         }
       });
-      if (typeColumn) {
-        document.querySelectorAll('.type-key-input').forEach(i => typeToKeyMap[i.dataset.typeVal] = i.value);
-      }
+
       parent.postMessage({ pluginMessage: { 
         type: 'generate', 
-        data: csvData, 
-        mappings, 
-        typeToKeyMap,
-        templateKey: document.getElementById('componentKey').value 
+        data: csvData.data, 
+        typeColumn, 
+        mapping: finalMapping 
       } }, '*');
     };
-
-    function showMessage(text) {
-      const m = document.getElementById('message');
-      m.textContent = text;
-      setTimeout(() => m.textContent = '', 5000);
-    }
   </script>
 </body>
 </html>

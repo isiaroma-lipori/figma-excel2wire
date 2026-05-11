@@ -1,19 +1,25 @@
-figma.showUI(__html__, { width: 320, height: 480, themeColors: true });
+figma.showUI(__html__, { width: 500, height: 640, themeColors: true });
 
 figma.ui.onmessage = async (msg) => {
+  console.log('Main thread received message:', msg); // Critical log
+
   if (msg.type === 'get-selection-key') {
     const selection = figma.currentPage.selection;
     if (selection.length > 0) {
       const node = selection[0];
       let key = '';
+
       if (node.type === 'INSTANCE') {
-        key = node.mainComponent ? node.mainComponent.key : '';
+        if (node.mainComponent) {
+          key = node.mainComponent.key;
+        }
       } else if (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') {
         key = node.key;
       }
 
       if (key) {
-        figma.ui.postMessage({ type: 'selection-key', key });
+        console.log('Sending selection-key for mappedType:', msg.mappedType, 'Key:', key);
+        figma.ui.postMessage({ type: 'selection-key', key, mappedType: msg.mappedType });
       } else {
         figma.ui.postMessage({ type: 'error', message: 'Selected item has no Component Key.' });
       }
@@ -23,216 +29,285 @@ figma.ui.onmessage = async (msg) => {
   }
 
   if (msg.type === 'get-properties') {
-    const key = msg.key;
-    console.log('Fetching properties for key:', key);
-    
+    const { key, mappedType } = msg;
+    console.log('Fetching properties for key:', key, 'mappedType:', mappedType);
     try {
       let component;
 
-      // 1. Check if current selection matches this key (fastest and most reliable if already on canvas)
+      // 1. Check selection
       const selection = figma.currentPage.selection;
       if (selection.length > 0) {
         const node = selection[0];
-        let selectedComponent = null;
-        if (node.type === 'INSTANCE') selectedComponent = node.mainComponent;
-        else if (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') selectedComponent = node;
-        
-        if (selectedComponent && selectedComponent.key === key) {
-          component = selectedComponent;
-          console.log('Using component from current selection:', component.name);
+        let selectedOwner: any = null;
+        if (node.type === 'INSTANCE') selectedOwner = node.mainComponent;
+        else if (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') selectedOwner = node;
+
+        if (selectedOwner && (selectedOwner.key === key || (selectedOwner.parent && selectedOwner.parent.key === key))) {
+          component = selectedOwner;
         }
       }
 
-      // 2. Try importing from library if not found in selection
+      // 2. Import
       if (!component) {
         try {
           component = await figma.importComponentByKeyAsync(key);
-          console.log('Imported from library:', component.name);
-        } catch (e) {
-          console.log('Import failed or component not accessible via key:', key);
-        }
+        } catch (e) { }
       }
 
-      // 3. Search locally in the document
+      // 3. Search local
       if (!component) {
         for (const page of figma.root.children) {
-          const found = page.findOne(node => 
+          const found = page.findOne(node =>
             (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') && node.key === key
           );
           if (found) {
             component = found as ComponentNode | ComponentSetNode;
-            console.log('Found local component:', component.name);
             break;
           }
         }
       }
 
       if (!component) {
-        throw new Error('Component not found. Ensure the library is enabled or the component is public.');
+        throw new Error('Component not found.');
       }
 
-      // Handle variants: properties are defined on the ComponentSetNode
       let propertyOwner: ComponentNode | ComponentSetNode = component;
       if (component.type === 'COMPONENT' && component.parent && component.parent.type === 'COMPONENT_SET') {
         propertyOwner = component.parent as ComponentSetNode;
       }
 
       const properties = propertyOwner.componentPropertyDefinitions;
-      const propArray = Object.keys(properties).map(name => ({
-        name,
-        type: properties[name].type,
-        role: 'prop'
-      }));
+      const propArray = Object.keys(properties)
+        .filter(name => name.startsWith('#'))
+        .map(name => ({
+          name,
+          type: properties[name].type,
+          role: 'prop'
+        }));
 
-      // 4. Discovery: Scan for ALL nested layers starting with '#'
-      const nestedElements: Map<string, any> = new Map();
-      const scan = (node: any) => {
+      const getNodePath = (node: any, root: any): string => {
+        const parts = [];
+        let curr = node;
+        while (curr) {
+          let name = curr.name;
+          const parent = curr.parent;
+          if (parent && parent.id !== root.id) {
+            const siblings = parent.children.filter((c: any) => c.name === name);
+            if (siblings.length > 1) {
+              const index = siblings.indexOf(curr);
+              if (index > 0) name = `${name} [${index}]`;
+            }
+          }
+          parts.unshift(name);
+          if (curr.id === root.id) break;
+          curr = curr.parent;
+        }
+        return parts.join(' > ');
+      };
+
+      const nestedElements: any[] = [];
+      const scan = (node: any, root: any) => {
         if (node.name.startsWith('#')) {
-          nestedElements.set(node.name, { name: node.name, type: node.type, role: 'layer' });
+          nestedElements.push({
+            name: node.name,
+            path: getNodePath(node, root),
+            type: node.type,
+            role: 'layer'
+          });
         }
         if ('children' in node) {
-          for (const child of node.children) scan(child);
+          for (const child of node.children) scan(child, root);
         }
       };
-      
-      // Scan all variants to get a complete list of layers
-      if (propertyOwner.type === 'COMPONENT_SET') {
-        propertyOwner.children.forEach(variant => scan(variant));
-      } else {
-        scan(propertyOwner);
-      }
 
-      // Add unique nested elements to the list if not already there as a property
+      // Only scan the specific component/variant, even if it's in a set
+      scan(component, component);
+
       nestedElements.forEach(layer => {
-        if (!propArray.find(p => p.name === layer.name)) {
-          propArray.push(layer);
-        }
+        // Now uniqueness is managed by the index [n]
+        propArray.push(layer);
       });
-      
-      figma.ui.postMessage({ type: 'properties-list', properties: propArray });
+
+      figma.ui.postMessage({ type: 'properties-list', properties: propArray, mappedType, key });
     } catch (e) {
-      console.error(e);
-      figma.ui.postMessage({ type: 'error', message: e.message || 'Error fetching component.' });
+      figma.ui.postMessage({ type: 'error', message: e.message || 'Error fetching properties.' });
     }
   }
 
   if (msg.type === 'generate') {
-    const { data, mappings, templateKey, typeToKeyMap } = msg;
+    const { data, typeColumn, mapping } = msg;
 
     try {
       const nodes: SceneNode[] = [];
-      let yOffset = 0;
-
-      // Find identifying columns
-      let keyColumn = '';
-      let typeColumn = '';
-      for (const [col, role] of Object.entries(mappings)) {
-        if (role === 'comp-key') keyColumn = col;
-        if (role === 'comp-type') typeColumn = col;
-      }
+      const sectionFrames = new Map<string, FrameNode>();
 
       for (const row of data) {
-        // Resolve key: Lookup from map OR literal key OR template default
-        let rowKey = templateKey;
-        if (typeColumn && typeToKeyMap) {
-          const typeVal = row[typeColumn];
-          if (typeToKeyMap[typeVal]) rowKey = typeToKeyMap[typeVal];
-        } else if (keyColumn) {
-          rowKey = row[keyColumn];
-        }
+        const typeVal = row[typeColumn];
+        const sectionName = row['section_name'] || 'General';
+        const config = mapping[typeVal];
 
-        if (!rowKey) continue;
+        if (!config || !config.componentKey) {
+          console.log('Skipping row - no config for type:', typeVal);
+          continue;
+        }
 
         let component;
         try {
-          component = await figma.importComponentByKeyAsync(rowKey);
+          console.log('Attempting to import component for key:', config.componentKey);
+          component = await figma.importComponentByKeyAsync(config.componentKey);
+          console.log('Successfully imported library component:', component.name);
         } catch (e) {
-          // Search locally
+          console.log('Library import failed, searching local pages for key:', config.componentKey);
           for (const page of figma.root.children) {
-            const found = page.findOne(node => 
-              (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') && node.key === rowKey
+            const found = page.findOne(node =>
+              (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') && node.key === config.componentKey
             );
             if (found) {
               component = found as ComponentNode | ComponentSetNode;
+              console.log('Found local component:', component.name, 'on page:', page.name);
               break;
             }
           }
         }
 
         if (!component) {
-          console.warn('Component not found for row key:', rowKey);
+          console.warn('Component NOT FOUND for key:', config.componentKey);
           continue;
         }
 
+        // Get or Create Section Frame
+        let frame = sectionFrames.get(sectionName);
+        if (!frame) {
+          frame = figma.createFrame();
+          frame.name = sectionName;
+          frame.layoutMode = 'VERTICAL';
+          frame.itemSpacing = 16;
+          frame.paddingTop = 24;
+          frame.paddingBottom = 24;
+          frame.paddingLeft = 24;
+          frame.paddingRight = 24;
+          frame.primaryAxisSizingMode = 'AUTO';
+          frame.counterAxisSizingMode = 'FIXED';
+          frame.resize(375, 100); // Initial height, will grow due to AUTO sizing
+          sectionFrames.set(sectionName, frame);
+          nodes.push(frame);
+        }
+
         const instance = component.createInstance();
+        console.log('Created instance for row type:', typeVal);
+        frame.appendChild(instance);
+
         const propertiesToSet = {};
 
-        // Handle variants for property definitions
         let propertyOwner: ComponentNode | ComponentSetNode = component;
         if (component.type === 'COMPONENT' && component.parent && component.parent.type === 'COMPONENT_SET') {
           propertyOwner = component.parent as ComponentSetNode;
         }
 
-        // Apply mappings
-        for (const [col, role] of Object.entries(mappings)) {
-          const value = row[col];
+        // Apply mappings for this type
+        const fields = config.fields || {};
+        console.log('Applying mappings:', fields);
+
+        for (const [targetKey, csvCol] of Object.entries(fields)) {
+          const value = row[csvCol as string];
           if (value === undefined || value === "") continue;
 
-          if (typeof role === 'string' && role.startsWith('prop:')) {
-            const propName = role.replace('prop:', '');
-            const propDef = propertyOwner.componentPropertyDefinitions[propName];
-            if (propDef) {
-              let processedValue: any = value;
-              if (propDef.type === 'BOOLEAN') {
-                processedValue = (value.toLowerCase() === 'true' || value === '1' || value.toLowerCase() === 'si');
-              }
-              propertiesToSet[propName] = processedValue;
+          // targetKey is either a Prop Name or a Hierarchy Path
+
+          // 1. Check if it's a property
+          if (propertyOwner.componentPropertyDefinitions[targetKey]) {
+            const propDef = propertyOwner.componentPropertyDefinitions[targetKey];
+            let processedValue: any = value;
+            if (propDef.type === 'BOOLEAN') {
+              processedValue = (String(value).toLowerCase() === 'true' || value === '1' || String(value).toLowerCase() === 'si');
             }
-          } else if (typeof role === 'string' && role.startsWith('layer:')) {
-            const layerName = role.replace('layer:', '');
-            const findAndApply = async (n: any) => {
-              if (n.name === layerName) {
-                // Determine if we are setting text or visibility
-                const boolValues = ['true', 'false', '1', '0', 'si', 'no'];
-                const isBool = boolValues.includes(String(value).toLowerCase());
-                
-                if (isBool) {
-                  n.visible = (String(value).toLowerCase() === 'true' || value === '1' || String(value).toLowerCase() === 'si');
-                } else if (n.type === 'TEXT') {
-                  await figma.loadFontAsync(n.fontName as FontName);
-                  n.characters = String(value);
+            propertiesToSet[targetKey] = processedValue;
+          } else {
+            // 2. It's a layer path
+            const findByPath = (root: any, path: string) => {
+              const parts = path.split(' > ');
+              let current = root;
+              // Skip parts[0] because it's the root component name
+              for (let i = 1; i < parts.length; i++) {
+                if (!current || !current.children) return null;
+
+                let targetName = parts[i];
+                let targetIndex = 0;
+
+                // Check for index suffix like "Name [1]"
+                const match = targetName.match(/(.+) \[(\d+)\]$/);
+                if (match) {
+                  targetName = match[1];
+                  targetIndex = parseInt(match[2], 10);
                 }
-                return true;
+
+                const siblings = current.children.filter((c: any) => c.name === targetName);
+                current = siblings[targetIndex];
               }
-              if ('children' in n) {
-                for (const child of n.children) {
-                   if (await findApply(child)) return true;
-                }
-              }
-              return false;
+              return current;
             };
-            const findApply = findAndApply; // Alias for recursion
-            await findApply(instance);
+
+            const targetNode = findByPath(instance, targetKey);
+            if (targetNode) {
+              const boolValues = ['true', 'false', '1', '0', 'si', 'no'];
+              const isBool = boolValues.includes(String(value).toLowerCase());
+
+              if (isBool) {
+                targetNode.visible = (String(value).toLowerCase() === 'true' || value === '1' || String(value).toLowerCase() === 'si');
+              } else if (targetNode.type === 'TEXT') {
+                try {
+                  await figma.loadFontAsync(targetNode.fontName as FontName);
+                  targetNode.characters = String(value);
+                } catch (err) {
+                  console.error('Font load error:', err);
+                }
+              }
+            } else {
+              // Fallback to name search if path lookup fails (backward compatibility or minor changes)
+              const findByName = (n: any): any => {
+                if (n.name === targetKey) return n;
+                if (n.children) {
+                  for (const c of n.children) {
+                    const found = findByName(c);
+                    if (found) return found;
+                  }
+                }
+                return null;
+              };
+              const fallbackNode = findByName(instance);
+              if (fallbackNode && fallbackNode.type === 'TEXT') {
+                await figma.loadFontAsync(fallbackNode.fontName as FontName);
+                fallbackNode.characters = String(value);
+              }
+            }
           }
         }
 
         try {
           instance.setProperties(propertiesToSet);
         } catch (err) {
-          console.error('Error setting properties for component:', component.name, err);
+          console.warn('Set properties error (handled):', err);
         }
-
-        instance.x = figma.viewport.center.x;
-        instance.y = figma.viewport.center.y + yOffset;
-        yOffset += instance.height + 20;
-        nodes.push(instance);
       }
 
-      figma.currentPage.selection = nodes;
-      figma.viewport.scrollAndZoomIntoView(nodes);
-      figma.closePlugin('Generated ' + nodes.length + ' instances!');
+      // Position frames horizontally
+      let currentX = figma.viewport.center.x;
+      for (const frame of Array.from(sectionFrames.values())) {
+        frame.x = currentX;
+        frame.y = figma.viewport.center.y - (frame.height / 2);
+        currentX += frame.width + 100; // Spacing between sections
+      }
+
+      if (nodes.length > 0) {
+        figma.currentPage.selection = nodes;
+        figma.viewport.scrollAndZoomIntoView(nodes);
+        figma.closePlugin('Generated ' + nodes.length + ' instances across ' + sectionFrames.size + ' sections!');
+      } else {
+        figma.ui.postMessage({ type: 'error', message: 'No instances generated. Check mappings.' });
+      }
     } catch (e) {
-      figma.ui.postMessage({ type: 'error', message: 'Error generating instances.' });
+      console.error('Generation overall error:', e);
+      figma.ui.postMessage({ type: 'error', message: 'Error generating.' });
     }
   }
 };
