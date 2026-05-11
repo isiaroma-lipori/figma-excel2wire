@@ -2,157 +2,286 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Excel2Wire</title>
+  <title>Excel2Wire Pro</title>
   <style>
     :root {
       --figma-blue: #18a0fb;
       --figma-bg: #ffffff;
+      --figma-bg-secondary: #f5f5f5;
+      --figma-bg-tertiary: #ebebeb;
       --figma-text: #333333;
+      --figma-text-secondary: #8c8c8c;
       --figma-border: #e6e6e6;
-      --figma-secondary: #f5f5f5;
+      --brand-color: #0d99ff;
+      --brand-hover: #007be5;
+      --danger: #f24822;
+      --success: #10a958;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
     
     body {
-      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 11px;
       margin: 0;
-      padding: 16px;
-      background-color: var(--figma-color-bg);
-      color: var(--figma-color-text);
+      padding: 20px;
+      background-color: var(--figma-color-bg, #ffffff);
+      color: var(--figma-color-text, #333333);
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 20px;
       user-select: none;
     }
 
-    h1, h2 {
-      font-size: 11px;
-      margin: 0;
-      font-weight: 600;
+    /* Premium Typography */
+    h1 {
+      font-size: 10px;
+      margin: 0 0 4px 0;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--figma-color-text-secondary);
+      letter-spacing: 0.08em;
+      color: var(--figma-color-text-secondary, #8c8c8c);
     }
 
+    h2 {
+      font-size: 13px;
+      margin: 0;
+      font-weight: 600;
+    }
+
+    /* Step Cards */
     .step-card {
-      background: var(--figma-color-bg);
-      border: 1px solid var(--figma-color-border);
-      border-radius: 6px;
-      padding: 12px;
+      background: var(--figma-color-bg, #ffffff);
+      border: 1px solid var(--figma-color-border, #e6e6e6);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: var(--shadow);
       display: flex;
       flex-direction: column;
       gap: 12px;
+      transition: border-color 0.2s;
+    }
+
+    .step-card:hover {
+      border-color: var(--figma-color-border-strong, #d1d1d1);
     }
 
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
 
-    label { font-weight: 500; font-size: 10px; opacity: 0.8; }
+    label { font-weight: 600; font-size: 11px; color: var(--figma-color-text, #333333); }
 
+    /* Inputs & Selects */
     select, input[type="text"] {
       width: 100%;
-      padding: 8px;
-      border: 1px solid var(--figma-color-border);
-      background-color: var(--figma-color-bg-secondary);
-      color: var(--figma-color-text);
-      border-radius: 4px;
+      padding: 10px;
+      border: 1px solid var(--figma-color-border, #e6e6e6);
+      background-color: var(--figma-color-bg-secondary, #f5f5f5);
+      color: var(--figma-color-text, #333333);
+      border-radius: 6px;
       font-size: 11px;
       box-sizing: border-box;
+      outline: none;
     }
 
-    input[type="text"]:focus {
-      outline: 1px solid var(--figma-color-bg-brand);
-      border-color: var(--figma-color-bg-brand);
+    select:focus, input[type="text"]:focus {
+      border-color: var(--brand-color);
+      box-shadow: 0 0 0 2px rgba(13, 153, 255, 0.1);
     }
 
+    /* Buttons */
     button {
-      padding: 8px 16px;
+      height: 32px;
+      padding: 0 16px;
       border: none;
-      border-radius: 4px;
-      background-color: var(--figma-color-bg-brand);
-      color: var(--figma-color-text-onbrand);
+      border-radius: 6px;
+      background-color: var(--figma-color-bg-brand, var(--brand-color));
+      color: var(--figma-color-text-onbrand, #ffffff);
       font-weight: 600;
       cursor: pointer;
       font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s, transform 0.1s;
     }
+
+    button:hover { background-color: var(--figma-color-bg-brand-hover, var(--brand-hover)); }
+    button:active { transform: translateY(1px); }
 
     button.secondary {
-      background-color: var(--figma-color-bg-secondary);
-      color: var(--figma-color-text);
-      border: 1px solid var(--figma-color-border);
+      background-color: transparent;
+      color: var(--figma-color-text, #333333);
+      border: 1px solid var(--figma-color-border, #e6e6e6);
+    }
+    button.secondary:hover {
+      background-color: var(--figma-color-bg-secondary, #f5f5f5);
+      border-color: var(--figma-color-border-strong, #d1d1d1);
     }
 
-    table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-    th { text-align: left; font-size: 9px; padding-bottom: 4px; color: var(--figma-color-text-tertiary); }
-    td { padding: 4px 0; border-bottom: 1px solid var(--figma-color-border-subtle); }
+    button.danger {
+      background-color: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+    button.danger:hover {
+      background-color: var(--danger);
+      color: white;
+    }
+
+    button.icon-btn {
+      padding: 0 8px;
+      width: 32px;
+    }
+
+    /* Table Styles */
+    table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 8px; }
+    th { text-align: left; font-size: 9px; padding: 8px; color: var(--figma-color-text-secondary, #8c8c8c); text-transform: uppercase; border-bottom: 1px solid var(--figma-color-border, #e6e6e6); }
+    td { padding: 12px 8px; border-bottom: 1px solid var(--figma-color-border-subtle, #f0f0f0); vertical-align: middle; }
 
     /* Accordion Styles */
     .accordion {
-      border: 1px solid var(--figma-color-border);
-      border-radius: 4px;
+      border: 1px solid var(--figma-color-border, #e6e6e6);
+      border-radius: 8px;
       margin-top: 8px;
       overflow: hidden;
+      background: var(--figma-color-bg, #ffffff);
     }
     .accordion-header {
-      background: var(--figma-color-bg-secondary);
-      padding: 8px 12px;
+      background: var(--figma-color-bg-secondary, #f5f5f5);
+      padding: 12px 16px;
       font-weight: 600;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
+    .accordion-header:hover { background: var(--figma-color-bg-tertiary, #ebebeb); }
     .accordion-content {
-      padding: 0 12px;
+      padding: 0 16px;
       max-height: 0;
       overflow: hidden;
-      transition: max-height 0.2s ease-out, padding 0.2s ease-out;
+      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s;
     }
     .accordion.open .accordion-content {
-      max-height: 1000px;
-      padding: 12px;
+      max-height: 2000px;
+      padding: 16px;
     }
+
     .breadcrumb {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: 4px;
       font-size: 10px;
-      margin-bottom: 2px;
+      margin-bottom: 4px;
     }
     .breadcrumb span {
-      background: var(--figma-color-bg-tertiary);
-      padding: 1px 4px;
-      border-radius: 2px;
+      background: var(--figma-color-bg-tertiary, #ebebeb);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--figma-color-text-secondary, #8c8c8c);
     }
-    .prop-path { padding: 8px 0; }
-    .chevron { transition: transform 0.2s; font-size: 8px; }
+    .chevron { transition: transform 0.3s; color: var(--figma-color-text-secondary, #8c8c8c); }
     .accordion.open .chevron { transform: rotate(180deg); }
 
-    #message { font-size: 10px; color: #f24822; min-height: 14px; }
+    #message { 
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      transform: translateY(100px);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    #message.show { transform: translateY(0); }
     
     .hidden { display: none !important; }
 
-    .small-btn { padding: 4px 8px; font-size: 9px; }
+    .flex-row { display: flex; gap: 8px; align-items: center; }
+    .flex-grow { flex-grow: 1; }
+    .align-right { justify-content: flex-end; }
+
+    /* Custom File Input */
+    .file-input-wrapper {
+      position: relative;
+      height: 60px;
+      border: 2px dashed var(--figma-color-border, #e6e6e6);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .file-input-wrapper:hover { background: var(--figma-color-bg-secondary, #f5f5f5); }
+    .file-input-wrapper input { opacity: 0; position: absolute; inset: 0; cursor: pointer; }
+
+    /* Icons */
+    .icon { width: 16px; height: 16px; fill: currentColor; }
+
+    .save-section {
+      background: linear-gradient(135deg, var(--figma-color-bg-brand, var(--brand-color)) 0%, #7d44ff 100%);
+      padding: 20px;
+      border-radius: 12px;
+      color: white;
+      margin-top: 10px;
+    }
+    .save-section h1 { color: rgba(255,255,255,0.8); }
+    .save-section label { color: white; }
+    .save-section input, .save-section select { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: white; }
+    .save-section input::placeholder { color: rgba(255,255,255,0.5); }
+    .save-section .secondary { background: rgba(255,255,255,0.2); color: white; border: none; }
+    .save-section .secondary:hover { background: rgba(255,255,255,0.3); }
+
   </style>
 </head>
 <body>
+  <!-- Header / Saved Mappings -->
+  <div class="step-card" style="background: var(--figma-color-bg-secondary, #f5f5f5); border-style: solid;">
+    <h1>Configurazioni</h1>
+    <div class="flex-row">
+      <select id="savedMappingsSelect" class="flex-grow">
+        <option value="">-- Seleziona salvataggio --</option>
+      </select>
+      <button id="loadMappingBtn" class="secondary" title="Carica">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" transform="rotate(45 12 12)"/></svg>
+        Apri
+      </button>
+      <button id="importFileBtn" class="secondary" title="Importa JSON">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+        Importa
+      </button>
+      <button id="deleteMappingBtn" class="danger icon-btn" title="Elimina">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+      </button>
+    </div>
+    <input type="file" id="importFileInput" accept=".json" class="hidden">
+  </div>
+
   <!-- Step 1: Loading CSV -->
   <div class="step-card">
     <h1>1. Carica file CSV</h1>
-    <div class="form-group">
+    <div class="file-input-wrapper">
+      <div id="csvStatus">Trascina o clicca per caricare il CSV</div>
       <input type="file" id="csvFile" accept=".csv">
     </div>
   </div>
 
   <!-- Step 2: Selecting Type Column -->
   <div id="step2" class="step-card hidden">
-    <h1>2. Seleziona Colonna Tipo</h1>
+    <h1>2. Colonna Identificativo Tipo</h1>
     <div class="form-group">
-      <label for="typeColSelect">Colonna che identifica il tipo di domanda:</label>
+      <label for="typeColSelect">Quale colonna definisce il tipo di componente?</label>
       <select id="typeColSelect">
         <option value="">-- Seleziona --</option>
       </select>
@@ -162,12 +291,12 @@
   <!-- Step 3: Mapping Types to Components -->
   <div id="step3" class="step-card hidden">
     <h1>3. Mappatura Tipi a Componenti</h1>
-    <p style="font-size: 10px; color: var(--figma-color-text-tertiary);">Associa ogni valore trovato nel CSV ad un componente di Figma.</p>
     <table id="typeMappingTable">
       <thead>
         <tr>
-          <th width="40%">Valore CSV</th>
-          <th width="60%">Figma Component Key</th>
+          <th width="35%">Tipo CSV</th>
+          <th width="50%">Component Key</th>
+          <th width="15%">Azioni</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -176,9 +305,30 @@
 
   <!-- Step 4: Field Mapping Accordions -->
   <div id="step4" class="step-card hidden">
-    <h1>4. Mappatura Proprietà</h1>
+    <h1>4. Configurazione Proprietà</h1>
     <div id="accordionsList"></div>
-    <button id="generateBtn" style="margin-top: 16px; width: 100%; height: 40px; font-size: 12px;">GENERA COMPONENTI</button>
+    
+    <div class="flex-row" style="margin-top: 12px;">
+      <button id="exportFullJsonBtn" class="secondary flex-grow">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        Esporta Configurazione JSON
+      </button>
+      <button id="generateBtn" class="flex-grow" style="height: 40px; font-size: 12px; background: var(--brand-color);">
+        GENERA COMPONENTI
+      </button>
+    </div>
+  </div>
+
+  <!-- Save Mappping Section (Internal Storage) -->
+  <div id="saveInternalSection" class="save-section hidden">
+    <h1>Salva nel Plugin</h1>
+    <div class="form-group" style="margin-top: 10px;">
+      <label for="mappingName">Nome della configurazione:</label>
+      <div class="flex-row">
+        <input type="text" id="mappingName" placeholder="es. Form ATC 2024" class="flex-grow">
+        <button id="saveMappingBtn" class="secondary">Salva</button>
+      </div>
+    </div>
   </div>
 
   <div id="message"></div>
@@ -186,14 +336,22 @@
   <script>
     let csvData = { headers: [], data: [] };
     let csvHeaders = [];
-    let questionHeaders = []; 
     let typeMappings = {}; // typeVal -> { componentKey: '', properties: [], fieldMap: {} }
+    let savedMappings = [];
+
+    // Request mappings on startup
+    window.onload = () => {
+      parent.postMessage({ pluginMessage: { type: 'get-mappings' } }, '*');
+    };
 
     function showMessage(text, isError = true) {
       const m = document.getElementById('message');
+      if (!m) return;
       m.textContent = text;
-      m.style.color = isError ? '#f24822' : '#10a958';
-      setTimeout(() => m.textContent = '', 5000);
+      m.style.backgroundColor = isError ? '#f24822' : '#10a958';
+      m.style.color = 'white';
+      m.classList.add('show');
+      setTimeout(() => m.classList.remove('show'), 4000);
     }
 
     function parseCSV(text) {
@@ -219,7 +377,6 @@
         } else if ((char === '\r' || char === '\n') && !inQuotes) {
           if (char === '\r' && nextChar === '\n') i++;
           currentRow.push(currentField.trim());
-          // Only add non-empty rows
           if (currentRow.length > 0 && (currentRow.length > 1 || currentRow[0] !== "")) {
             rows.push(currentRow);
           }
@@ -229,7 +386,6 @@
           currentField += char;
         }
       }
-      // Handle the last field/row if it doesn't end with a newline
       if (currentField || currentRow.length > 0) {
         currentRow.push(currentField.trim());
         if (currentRow.length > 0 && (currentRow.length > 1 || currentRow[0] !== "")) {
@@ -249,9 +405,12 @@
       return { headers, data };
     }
 
+    // CSV File Upload
     document.getElementById('csvFile').onchange = (e) => {
       const file = e.target.files[0];
       if (!file) return;
+      document.getElementById('csvStatus').textContent = "Caricato: " + file.name;
+      
       const reader = new FileReader();
       reader.onload = (event) => {
         const parsed = parseCSV(event.target.result);
@@ -259,16 +418,14 @@
         
         csvData = parsed;
         csvHeaders = parsed.headers;
-        questionHeaders = csvHeaders.filter(h => h.toLowerCase().startsWith('question_'));
         
-        // Populate Step 2
         const select = document.getElementById('typeColSelect');
         select.innerHTML = '<option value="">-- Seleziona --</option>';
         csvHeaders.forEach(h => {
           const opt = document.createElement('option');
           opt.value = h;
           opt.textContent = h;
-          if (h.toLowerCase() === 'question_type') opt.selected = true;
+          if (h.toLowerCase() === 'question_type' || h.toLowerCase() === 'tipo') opt.selected = true;
           select.appendChild(opt);
         });
 
@@ -284,6 +441,7 @@
       if (!colName) { 
         document.getElementById('step3').classList.add('hidden'); 
         document.getElementById('step4').classList.add('hidden');
+        document.getElementById('saveInternalSection').classList.add('hidden');
         return; 
       }
       
@@ -299,7 +457,6 @@
       
       const newMappings = {};
       values.forEach(val => {
-        // Preserve existing mapping if already present
         newMappings[val] = typeMappings[val] || { componentKey: '', properties: [], fieldMap: {} };
       });
       typeMappings = newMappings;
@@ -308,42 +465,85 @@
         const row = document.createElement('tr');
         const config = typeMappings[val];
         
-        // Use textContent for safety and quotes for attributes
         const labelTd = document.createElement('td');
-        const strong = document.createElement('strong');
-        strong.textContent = val;
-        labelTd.appendChild(strong);
+        labelTd.innerHTML = `<span style="font-weight: 600;">${val}</span>`;
         
         const inputTd = document.createElement('td');
         inputTd.innerHTML = `
           <div style="display: flex; gap: 4px;">
-            <input type="text" class="key-input" placeholder="Key...">
-            <button class="small-btn secondary auto-btn">Auto</button>
+            <input type="text" class="key-input" placeholder="Key..." value="${config.componentKey}">
+            <button class="secondary icon-btn auto-btn" title="Usa selezionato">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            </button>
+          </div>
+        `;
+
+        const actionTd = document.createElement('td');
+        actionTd.innerHTML = `
+          <div style="display: flex; gap: 4px;">
+            <button class="secondary icon-btn export-comp-btn" title="Esporta mapping tipo">
+               <svg class="icon" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            </button>
+            <button class="secondary icon-btn import-comp-btn" title="Importa mapping tipo">
+               <svg class="icon" viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+            </button>
           </div>
         `;
 
         const input = inputTd.querySelector('.key-input');
-        const currentTypeVal = val;
-        input.dataset.type = currentTypeVal; 
+        input.dataset.type = val; 
 
         input.onblur = () => {
-          if (input.value && input.value !== typeMappings[currentTypeVal].componentKey) {
-            typeMappings[currentTypeVal].componentKey = input.value;
-            typeMappings[currentTypeVal].properties = [];
-            typeMappings[currentTypeVal].fieldMap = {};
-            console.log('UI manual key entry for:', currentTypeVal, 'Key:', input.value);
+          if (input.value && input.value !== typeMappings[val].componentKey) {
+            typeMappings[val].componentKey = input.value;
+            typeMappings[val].properties = [];
+            typeMappings[val].fieldMap = {};
             input.style.opacity = '0.5';
-            parent.postMessage({ pluginMessage: { type: 'get-properties', key: input.value, mappedType: currentTypeVal } }, '*');
+            parent.postMessage({ pluginMessage: { type: 'get-properties', key: input.value, mappedType: val } }, '*');
           }
         };
 
         inputTd.querySelector('.auto-btn').onclick = () => {
-          console.log('UI Auto-btn clicked for:', currentTypeVal);
-          parent.postMessage({ pluginMessage: { type: 'get-selection-key', mappedType: currentTypeVal } }, '*');
+          parent.postMessage({ pluginMessage: { type: 'get-selection-key', mappedType: val } }, '*');
+        };
+
+        actionTd.querySelector('.export-comp-btn').onclick = () => {
+          const compMapping = {
+            type: val,
+            componentKey: config.componentKey,
+            fieldMap: config.fieldMap
+          };
+          downloadJSON(compMapping, `mapping_${val}.json`);
+        };
+
+        actionTd.querySelector('.import-comp-btn').onclick = () => {
+           const input = document.createElement('input');
+           input.type = 'file';
+           input.accept = '.json';
+           input.onchange = (e) => {
+             const file = e.target.files[0];
+             const reader = new FileReader();
+             reader.onload = (event) => {
+                try {
+                  const imported = JSON.parse(event.target.result);
+                  if (imported.componentKey) {
+                    typeMappings[val].componentKey = imported.componentKey;
+                    typeMappings[val].fieldMap = imported.fieldMap || {};
+                    const keyInput = document.querySelector(`.key-input[data-type="${val}"]`);
+                    if (keyInput) keyInput.value = imported.componentKey;
+                    parent.postMessage({ pluginMessage: { type: 'get-properties', key: imported.componentKey, mappedType: val } }, '*');
+                    showMessage(`Mapping importato per ${val}`, false);
+                  }
+                } catch(e) { showMessage("File JSON non valido."); }
+             };
+             reader.readAsText(file);
+           };
+           input.click();
         };
 
         row.appendChild(labelTd);
         row.appendChild(inputTd);
+        row.appendChild(actionTd);
         tbody.appendChild(row);
       });
       document.getElementById('step3').classList.remove('hidden');
@@ -351,65 +551,127 @@
 
     window.onmessage = (event) => {
       const msg = event.data.pluginMessage;
-      console.log('UI received message:', msg); // Useful for debugging
-
       if (msg.type === 'selection-key') {
         const typeRec = msg.mappedType;
-        const typeCol = document.getElementById('typeColSelect').value;
-        console.log('UI received selection-key for type:', typeRec, 'with key:', msg.key);
-        
-        const inputs = document.querySelectorAll('.key-input');
-        let targetInput = null;
-        for (const input of inputs) {
-          if (input.dataset.type === String(typeRec)) {
-            targetInput = input;
-            break;
-          }
-        }
-
-        if (targetInput) {
-          targetInput.value = msg.key;
-          targetInput.style.opacity = '0.5';
+        const input = document.querySelector(`.key-input[data-type="${typeRec}"]`);
+        if (input) {
+          input.value = msg.key;
+          input.style.opacity = '0.5';
           typeMappings[typeRec].componentKey = msg.key;
           typeMappings[typeRec].properties = [];
           typeMappings[typeRec].fieldMap = {}; 
-          showMessage(`Chiave ottenuta per "${typeRec}"`, false);
           parent.postMessage({ pluginMessage: { type: 'get-properties', key: msg.key, mappedType: typeRec } }, '*');
-        } else {
-          console.error('Target input not found for type:', typeRec, 'Available:', Array.from(inputs).map(i => i.dataset.type));
         }
       } else if (msg.type === 'properties-list') {
         const typeRec = msg.mappedType;
         if (typeMappings[typeRec]) {
           typeMappings[typeRec].properties = msg.properties;
-          // Restore opacity
-          const inputs = document.querySelectorAll('.key-input');
-          for (const input of inputs) {
-            if (input.dataset.type === String(typeRec)) {
-               input.style.opacity = '1';
-               break;
-            }
-          }
+          const input = document.querySelector(`.key-input[data-type="${typeRec}"]`);
+          if (input) input.style.opacity = '1';
           renderStep4();
         }
+      } else if (msg.type === 'mappings-list') {
+        savedMappings = msg.mappings;
+        updateSavedMappingsSelect();
       } else if (msg.type === 'error') {
         showMessage(msg.message);
       }
     };
 
+    function updateSavedMappingsSelect() {
+      const select = document.getElementById('savedMappingsSelect');
+      select.innerHTML = '<option value="">-- Seleziona salvataggio --</option>';
+      savedMappings.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.name;
+        select.appendChild(opt);
+      });
+    }
+
+    function downloadJSON(data, filename) {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById('exportFullJsonBtn').onclick = () => {
+      const typeColumn = document.getElementById('typeColSelect').value;
+      const typeMappingsClean = {};
+      Object.keys(typeMappings).forEach(val => {
+        typeMappingsClean[val] = {
+          componentKey: typeMappings[val].componentKey,
+          fieldMap: typeMappings[val].fieldMap
+        };
+      });
+
+      const config = {
+        typeColumn,
+        typeMappings: typeMappingsClean,
+        exportedAt: new Date().toISOString()
+      };
+      downloadJSON(config, 'excel2wire_config.json');
+    };
+
+    document.getElementById('importFileBtn').onclick = () => {
+      document.getElementById('importFileInput').click();
+    };
+
+    document.getElementById('importFileInput').onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const config = JSON.parse(event.target.result);
+          applyConfig(config);
+          showMessage("Configurazione importata correttamente!", false);
+        } catch (e) {
+          showMessage("Errore nel parsing del file JSON.");
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    function applyConfig(config) {
+      if (!csvData.headers.length) {
+        showMessage("Carica prima un file CSV.");
+        return;
+      }
+      if (config.typeColumn) {
+        document.getElementById('typeColSelect').value = config.typeColumn;
+        handleTypeColChange();
+      }
+      
+      const mapSource = config.typeMappings || config; 
+      
+      Object.keys(mapSource).forEach(typeVal => {
+        if (typeMappings[typeVal]) {
+          const saved = mapSource[typeVal];
+          typeMappings[typeVal].componentKey = saved.componentKey;
+          typeMappings[typeVal].fieldMap = saved.fieldMap || {};
+          
+          parent.postMessage({ pluginMessage: { type: 'get-properties', key: saved.componentKey, mappedType: typeVal } }, '*');
+          const input = document.querySelector(`.key-input[data-type="${typeVal}"]`);
+          if (input) input.value = saved.componentKey;
+        }
+      });
+    }
+
     function renderStep4() {
       const list = document.getElementById('accordionsList');
       if (!list) return;
 
-      const existingStates = {}; // Keep track of open accordions
+      const existingStates = {}; 
       document.querySelectorAll('.accordion').forEach(a => {
         existingStates[a.dataset.type] = a.classList.contains('open');
       });
 
       list.innerHTML = '';
-      const typeCol = document.getElementById('typeColSelect').value;
-      if (!csvData || !csvData.data || csvData.data.length === 0) return;
-
       let hasMappedComponents = false;
 
       Object.keys(typeMappings).forEach(typeVal => {
@@ -428,9 +690,9 @@
         const content = document.createElement('div');
         content.className = 'accordion-content';
         content.innerHTML = `
-          <table class="mapping-table">
+          <table>
             <thead>
-              <tr><th width="50%">Gerarchia Figma</th><th width="50%">Colonna CSV</th></tr>
+              <tr><th width="50%">Gerarchia Figma</th><th width="40%">Colonna CSV</th><th width="10%"></th></tr>
             </thead>
             <tbody></tbody>
           </table>
@@ -438,10 +700,8 @@
 
         const tbody = content.querySelector('tbody');
         
-        // Helper function for automapping
         const getBestMatch = (propName, propPath, allHeaders, valueIdx) => {
-          if (!allHeaders || !Array.isArray(allHeaders)) return '';
-          
+          if (!allHeaders) return '';
           if (propName === '#value' && valueIdx !== -1) {
             const targetSuffix = String(valueIdx + 1).padStart(2, '0');
             const targetCol = `question_answer_option${targetSuffix}`;
@@ -450,8 +710,7 @@
           const cleanP = propName.toLowerCase().replace(/^#/, '');
           let match = allHeaders.find(h => h && h.toLowerCase().replace(/^question_/, '') === cleanP);
           if (match) return match;
-          match = allHeaders.find(h => h && h.toLowerCase().includes(cleanP));
-          return match || '';
+          return allHeaders.find(h => h && h.toLowerCase().includes(cleanP)) || '';
         };
 
         let valueCount = 0;
@@ -461,7 +720,6 @@
           const targetKey = prop.path || prop.name;
           
           let selectedValue = config.fieldMap[targetKey] || "";
-          // Map if empty
           if (!selectedValue) {
             const bestMatch = getBestMatch(prop.name, prop.path, csvData.headers, valueIdx);
             if (bestMatch) {
@@ -475,42 +733,33 @@
           tr.innerHTML = `
             <td class="prop-path">
               <div class="breadcrumb">${breadcrumb}</div>
-              <small style="opacity: 0.5;">${prop.role}</small>
+              <small style="opacity: 0.5;">${prop.role === 'prop' ? 'Proprietà' : 'Livello'}</small>
             </td>
             <td>
               <select class="field-select">
                 <option value="">-- Ignora --</option>
-                ${csvData.headers.map(h => 
-                  `<option value="${h}" ${h === selectedValue ? 'selected' : ''}>${h}</option>`
-                ).join('')}
+                ${csvData.headers.map(h => `<option value="${h}" ${h === selectedValue ? 'selected' : ''}>${h}</option>`).join('')}
               </select>
             </td>
             <td>
-              <button class="secondary auto-btn">Auto</button>
+              <button class="secondary icon-btn auto-btn" title="Auto Match">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              </button>
             </td>
           `;
 
           const select = tr.querySelector('.field-select');
-          select.onchange = (e) => {
-            config.fieldMap[targetKey] = e.target.value;
-          };
+          select.onchange = (e) => { config.fieldMap[targetKey] = e.target.value; };
 
-          const autoBtn = tr.querySelector('.auto-btn');
-          autoBtn.onclick = () => {
+          tr.querySelector('.auto-btn').onclick = () => {
              const bestMatch = getBestMatch(prop.name, prop.path, csvData.headers, valueIdx);
-             if (bestMatch) {
-               select.value = bestMatch;
-               config.fieldMap[targetKey] = bestMatch;
-             }
+             if (bestMatch) { select.value = bestMatch; config.fieldMap[targetKey] = bestMatch; }
           };
 
           tbody.appendChild(tr);
         });
 
-        header.onclick = () => {
-          accordion.classList.toggle('open');
-        };
-
+        header.onclick = () => accordion.classList.toggle('open');
         accordion.appendChild(header);
         accordion.appendChild(content);
         list.appendChild(accordion);
@@ -518,20 +767,59 @@
 
       if (hasMappedComponents) {
         document.getElementById('step4').classList.remove('hidden');
+        document.getElementById('saveInternalSection').classList.remove('hidden');
       }
     }
+
+    document.getElementById('saveMappingBtn').onclick = () => {
+      const name = document.getElementById('mappingName').value.trim();
+      if (!name) { showMessage("Inserisci un nome."); return; }
+      
+      const typeColumn = document.getElementById('typeColSelect').value;
+      const typeMappingsClean = {};
+      Object.keys(typeMappings).forEach(val => {
+        typeMappingsClean[val] = {
+          componentKey: typeMappings[val].componentKey,
+          fieldMap: typeMappings[val].fieldMap
+        };
+      });
+
+      const mapping = {
+        id: name.toLowerCase().replace(/\s+/g, '_'),
+        name,
+        typeColumn,
+        typeMappings: typeMappingsClean
+      };
+
+      parent.postMessage({ pluginMessage: { type: 'save-mapping', mapping } }, '*');
+      showMessage("Salvato internamente!", false);
+    };
+
+    document.getElementById('loadMappingBtn').onclick = () => {
+      const id = document.getElementById('savedMappingsSelect').value;
+      if (!id) return;
+      const mapping = savedMappings.find(m => m.id === id);
+      if (mapping) {
+        applyConfig(mapping);
+        showMessage(`Configurazione "${mapping.name}" caricata.`, false);
+      }
+    };
+
+    document.getElementById('deleteMappingBtn').onclick = () => {
+      const id = document.getElementById('savedMappingsSelect').value;
+      if (!id) return;
+      if (confirm("Eliminare questa configurazione?")) {
+        parent.postMessage({ pluginMessage: { type: 'delete-mapping', id } }, '*');
+      }
+    };
 
     document.getElementById('generateBtn').onclick = () => {
       const typeColumn = document.getElementById('typeColSelect').value;
       const finalMapping = {};
-      
       Object.keys(typeMappings).forEach(typeVal => {
         const config = typeMappings[typeVal];
         if (config.componentKey) {
-          finalMapping[typeVal] = {
-            componentKey: config.componentKey,
-            fields: config.fieldMap
-          };
+          finalMapping[typeVal] = { componentKey: config.componentKey, fields: config.fieldMap };
         }
       });
 

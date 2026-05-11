@@ -1,0 +1,10 @@
+{
+  "type": "boolean",
+  "componentKey": "9deb1b294315707a5bf594f1bdbb5e2dfb3b1d78",
+  "fieldMap": {
+    "question_boolean > Radio input field > question > #Label": "question_title_text",
+    "question_boolean > Radio input field > question > List > Single list > Checkbox > #Text1": "question_answer_option_01",
+    "question_boolean > Radio input field > question > List > Single list [1] > Checkbox > #Text2": "question_answer_option_02",
+    "question_boolean > Radio input field > #Hint text": "question_desc_text"
+  }
+}

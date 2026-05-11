@@ -209,8 +209,10 @@ figma.ui.onmessage = async (msg) => {
         console.log('Applying mappings:', fields);
 
         for (const [targetKey, csvCol] of Object.entries(fields)) {
+          if (!csvCol) continue; // Skip if no column is mapped to this target
+          
           const value = row[csvCol as string];
-          if (value === undefined || value === "") continue;
+          if (value === undefined) continue;
 
           // targetKey is either a Prop Name or a Hierarchy Path
 
@@ -302,12 +304,53 @@ figma.ui.onmessage = async (msg) => {
         figma.currentPage.selection = nodes;
         figma.viewport.scrollAndZoomIntoView(nodes);
         figma.closePlugin('Generated ' + nodes.length + ' instances across ' + sectionFrames.size + ' sections!');
-      } else {
-        figma.ui.postMessage({ type: 'error', message: 'No instances generated. Check mappings.' });
       }
     } catch (e) {
       console.error('Generation overall error:', e);
       figma.ui.postMessage({ type: 'error', message: 'Error generating.' });
     }
   }
-};
+
+  if (msg.type === 'save-mapping') {
+    const { mapping } = msg;
+    try {
+      const existingMappingsJson = await figma.clientStorage.getAsync('saved_mappings') || '[]';
+      const existingMappings = JSON.parse(existingMappingsJson);
+      
+      const index = existingMappings.findIndex((m: any) => m.id === mapping.id);
+      if (index !== -1) {
+        existingMappings[index] = mapping;
+      } else {
+        existingMappings.push(mapping);
+      }
+      
+      await figma.clientStorage.setAsync('saved_mappings', JSON.stringify(existingMappings));
+      const updatedMappings = await figma.clientStorage.getAsync('saved_mappings');
+      figma.ui.postMessage({ type: 'mappings-list', mappings: JSON.parse(updatedMappings) });
+    } catch (e) {
+      figma.ui.postMessage({ type: 'error', message: 'Failed to save mapping.' });
+    }
+  }
+
+  if (msg.type === 'get-mappings') {
+    try {
+      const mappingsJson = await figma.clientStorage.getAsync('saved_mappings') || '[]';
+      figma.ui.postMessage({ type: 'mappings-list', mappings: JSON.parse(mappingsJson) });
+    } catch (e) {
+      figma.ui.postMessage({ type: 'error', message: 'Failed to load mappings.' });
+    }
+  }
+
+  if (msg.type === 'delete-mapping') {
+    const { id } = msg;
+    try {
+      const existingMappingsJson = await figma.clientStorage.getAsync('saved_mappings') || '[]';
+      const existingMappings = JSON.parse(existingMappingsJson);
+      const filtered = existingMappings.filter((m: any) => m.id !== id);
+      await figma.clientStorage.setAsync('saved_mappings', JSON.stringify(filtered));
+      figma.ui.postMessage({ type: 'mappings-list', mappings: filtered });
+    } catch (e) {
+      figma.ui.postMessage({ type: 'error', message: 'Failed to delete mapping.' });
+    }
+  }
+}

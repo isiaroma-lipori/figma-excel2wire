@@ -1,0 +1,74 @@
+{
+  "typeColumn": "question_type",
+  "typeMappings": {
+    "radio": {
+      "componentKey": "6d63e4c2e4f3e5835c12d90e1c26e9028fdfe590",
+      "fieldMap": {
+        "question_radio > Radio input field > question > #Label": "question_title_text",
+        "question_radio > Radio input field > question > List > Single list > Checkbox > #Text1": "question_answer_option_01",
+        "question_radio > Radio input field > question > List > Single list [1] > Checkbox > #Text2": "question_answer_option_02",
+        "question_radio > Radio input field > question > List > Single list [2] > Checkbox > #Text3": "question_answer_option_03",
+        "question_radio > Radio input field > question > List > Single list [3] > Checkbox > #Text4": "question_answer_option_04",
+        "question_radio > Radio input field > question > List > Single list [4] > Checkbox > #Text5": "question_answer_option_05",
+        "question_radio > Radio input field > question > List > Single list [5] > Checkbox > #Text6": "question_answer_option_06",
+        "question_radio > Radio input field > question > List > Single list [6] > Checkbox > #Text7": "question_answer_option_07",
+        "question_radio > Radio input field > question > List > Single list [7] > Checkbox > #Text8": "question_answer_option_08",
+        "question_radio > Radio input field > #Hint text": "question_desc_text"
+      }
+    },
+    "text_short": {
+      "componentKey": "ca36aefada92977131fa210b1e0e6b657d762938",
+      "fieldMap": {
+        "question_text_short > Input field > Input > #Label": "question_title_text",
+        "question_text_short > Input field > #Hint text": "question_desc_text"
+      }
+    },
+    "select_single": {
+      "componentKey": "e354b72aff437bab4863e90396f5a64ea737e5e6",
+      "fieldMap": {
+        "question_select > Input field > Input > #Label": "question_title_text",
+        "question_select > Input field > #Hint text": "question_desc_text"
+      }
+    },
+    "select_multi": {
+      "componentKey": "e354b72aff437bab4863e90396f5a64ea737e5e6",
+      "fieldMap": {
+        "question_select > Input field > Input > #Label": "question_title_text",
+        "question_select > Input field > #Hint text": "question_desc_text"
+      }
+    },
+    "text_rich": {
+      "componentKey": "1ec254953f99379682fc503b6c793c54f449da13",
+      "fieldMap": {
+        "question_text_rich > Textarea input field > Textarea > Textarea > Content > #Text": "question_placeholder_text",
+        "question_text_rich > Textarea input field > Textarea > #Label": "question_title_text",
+        "question_text_rich > Textarea input field > #Hint text": "question_desc_text"
+      }
+    },
+    "checkbox": {
+      "componentKey": "c98954b4a3c76ca8ca648e82957c7349a4b848cc",
+      "fieldMap": {
+        "question_checkbox > Checkbox input field > question > #Label": "question_title_text",
+        "question_checkbox > Checkbox input field > question > List > Single list > Checkbox > #Text1": "question_answer_option_01",
+        "question_checkbox > Checkbox input field > question > List > Single list [1] > Checkbox > #Text2": "question_answer_option_02",
+        "question_checkbox > Checkbox input field > question > List > Single list [2] > Checkbox > #Text3": "question_answer_option_03",
+        "question_checkbox > Checkbox input field > question > List > Single list [3] > Checkbox > #Text4": "question_answer_option_04",
+        "question_checkbox > Checkbox input field > question > List > Single list [4] > Checkbox > #Text5": "question_answer_option_05",
+        "question_checkbox > Checkbox input field > question > List > Single list [5] > Checkbox > #Text6": "question_answer_option_06",
+        "question_checkbox > Checkbox input field > question > List > Single list [6] > Checkbox > #Text7": "question_answer_option_07",
+        "question_checkbox > Checkbox input field > question > List > Single list [7] > Checkbox > #Text8": "question_answer_option_08",
+        "question_checkbox > Checkbox input field > #Hint text": "question_desc_text"
+      }
+    },
+    "boolean": {
+      "componentKey": "9deb1b294315707a5bf594f1bdbb5e2dfb3b1d78",
+      "fieldMap": {
+        "question_boolean > Radio input field > question > #Label": "question_title_text",
+        "question_boolean > Radio input field > question > List > Single list > Checkbox > #Text1": "question_answer_option_01",
+        "question_boolean > Radio input field > question > List > Single list [1] > Checkbox > #Text2": "question_answer_option_02",
+        "question_boolean > Radio input field > #Hint text": "question_desc_text"
+      }
+    }
+  },
+  "exportedAt": "2026-05-11T16:53:42.340Z"
+}

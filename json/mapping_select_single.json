@@ -1,0 +1,8 @@
+{
+  "type": "select_single",
+  "componentKey": "e354b72aff437bab4863e90396f5a64ea737e5e6",
+  "fieldMap": {
+    "question_select > Input field > Input > #Label": "question_title_text",
+    "question_select > Input field > #Hint text": "question_desc_text"
+  }
+}

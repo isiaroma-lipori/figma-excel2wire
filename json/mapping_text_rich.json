@@ -1,0 +1,9 @@
+{
+  "type": "text_rich",
+  "componentKey": "1ec254953f99379682fc503b6c793c54f449da13",
+  "fieldMap": {
+    "question_text_rich > Textarea input field > Textarea > Textarea > Content > #Text": "question_placeholder_text",
+    "question_text_rich > Textarea input field > Textarea > #Label": "question_title_text",
+    "question_text_rich > Textarea input field > #Hint text": "question_desc_text"
+  }
+}

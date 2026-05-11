@@ -1,0 +1,16 @@
+{
+  "type": "radio",
+  "componentKey": "6d63e4c2e4f3e5835c12d90e1c26e9028fdfe590",
+  "fieldMap": {
+    "question_radio > Radio input field > question > #Label": "question_title_text",
+    "question_radio > Radio input field > question > List > Single list > Checkbox > #Text1": "question_answer_option_01",
+    "question_radio > Radio input field > question > List > Single list [1] > Checkbox > #Text2": "question_answer_option_02",
+    "question_radio > Radio input field > question > List > Single list [2] > Checkbox > #Text3": "question_answer_option_03",
+    "question_radio > Radio input field > question > List > Single list [3] > Checkbox > #Text4": "question_answer_option_04",
+    "question_radio > Radio input field > question > List > Single list [4] > Checkbox > #Text5": "question_answer_option_05",
+    "question_radio > Radio input field > question > List > Single list [5] > Checkbox > #Text6": "question_answer_option_06",
+    "question_radio > Radio input field > question > List > Single list [6] > Checkbox > #Text7": "question_answer_option_07",
+    "question_radio > Radio input field > question > List > Single list [7] > Checkbox > #Text8": "question_answer_option_08",
+    "question_radio > Radio input field > #Hint text": "question_desc_text"
+  }
+}

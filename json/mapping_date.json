@@ -1,0 +1,8 @@
+{
+  "type": "date",
+  "componentKey": "b9d93006348d2ed7007b5f657d67540c18be7773",
+  "fieldMap": {
+    "question_text_date > Date Input field > Input > #Label": "question_title_text",
+    "question_text_date > Date Input field > #Hint text": "question_desc_text"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "type": "text_short",
+  "componentKey": "ca36aefada92977131fa210b1e0e6b657d762938",
+  "fieldMap": {
+    "question_text_short > Input field > Input > #Label": "question_title_text",
+    "question_text_short > Input field > #Hint text": "question_desc_text"
+  }
+}
