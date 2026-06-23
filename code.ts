@@ -114,6 +114,14 @@ figma.ui.onmessage = async (msg) => {
             type: node.type,
             role: 'layer'
           });
+          if (node.type === 'TEXT' && node.name.toLowerCase().startsWith('#link')) {
+            nestedElements.push({
+              name: `${node.name} (Hyperlink)`,
+              path: `${getNodePath(node, root)} [hyperlink]`,
+              type: 'HYPERLINK',
+              role: 'layer'
+            });
+          }
         }
         if ('children' in node) {
           for (const child of node.children) scan(child, root);
@@ -242,6 +250,13 @@ figma.ui.onmessage = async (msg) => {
             propertiesToSet[targetKey] = processedValue;
           } else {
             // 2. It's a layer path
+            let isHyperlink = false;
+            let lookupKey = targetKey;
+            if (targetKey.endsWith(' [hyperlink]')) {
+              isHyperlink = true;
+              lookupKey = targetKey.slice(0, -12); // Remove ' [hyperlink]'
+            }
+
             const findByPath = (root: any, path: string) => {
               const parts = path.split(' > ');
               let current = root;
@@ -265,40 +280,62 @@ figma.ui.onmessage = async (msg) => {
               return current;
             };
 
-            const targetNode = findByPath(instance, targetKey);
+            const targetNode = findByPath(instance, lookupKey);
             if (targetNode) {
-              const boolValues = ['true', 'false', '1', '0', 'si', 'no'];
-              const isBool = boolValues.includes(String(value).toLowerCase());
-
-              if (isBool) {
-                targetNode.visible = (String(value).toLowerCase() === 'true' || value === '1' || String(value).toLowerCase() === 'si');
-              } else if (targetNode.type === 'TEXT') {
-                try {
-                  await figma.loadFontAsync(targetNode.fontName as FontName);
-                  targetNode.characters = String(value);
-                } catch (err) {
-                  console.error('Font load error:', err);
-                }
-              } else if ('fills' in targetNode) {
-                const cleanVal = getCleanFilename(String(value));
-                const imgData = imageMap.get(cleanVal);
-                if (imgData) {
+              if (isHyperlink) {
+                if (targetNode.type === 'TEXT') {
                   try {
-                    const image = figma.createImage(imgData);
-                    targetNode.fills = [{
-                      type: 'IMAGE',
-                      scaleMode: 'FILL',
-                      imageHash: image.hash
-                    }];
+                    await figma.loadFontAsync(targetNode.fontName as FontName);
+                    if (value) {
+                      targetNode.hyperlink = {
+                        type: 'URL',
+                        value: String(value).trim()
+                      };
+                    } else {
+                      targetNode.hyperlink = null;
+                    }
                   } catch (err) {
-                    console.error('Error setting image fill:', err);
+                    console.error('Error setting hyperlink:', err);
+                  }
+                }
+              } else {
+                const boolValues = ['true', 'false', '1', '0', 'si', 'no'];
+                const isBool = boolValues.includes(String(value).toLowerCase());
+
+                if (isBool) {
+                  targetNode.visible = (String(value).toLowerCase() === 'true' || value === '1' || String(value).toLowerCase() === 'si');
+                } else if (targetNode.type === 'TEXT') {
+                  try {
+                    await figma.loadFontAsync(targetNode.fontName as FontName);
+                    targetNode.characters = String(value);
+                  } catch (err) {
+                    console.error('Font load error:', err);
+                  }
+                } else if ('fills' in targetNode) {
+                  const cleanVal = getCleanFilename(String(value));
+                  const imgData = imageMap.get(cleanVal);
+                  if (imgData) {
+                    try {
+                      const image = figma.createImage(imgData);
+                      targetNode.fills = [{
+                        type: 'IMAGE',
+                        scaleMode: 'FILL',
+                        imageHash: image.hash
+                      }];
+                    } catch (err) {
+                      console.error('Error setting image fill:', err);
+                    }
                   }
                 }
               }
             } else {
               // Fallback to name search if path lookup fails (backward compatibility or minor changes)
+              let fallbackLookupKey = targetKey;
+              if (targetKey.endsWith(' [hyperlink]')) {
+                fallbackLookupKey = targetKey.slice(0, -12);
+              }
               const findByName = (n: any): any => {
-                if (n.name === targetKey) return n;
+                if (n.name === fallbackLookupKey) return n;
                 if (n.children) {
                   for (const c of n.children) {
                     const found = findByName(c);
@@ -309,22 +346,44 @@ figma.ui.onmessage = async (msg) => {
               };
               const fallbackNode = findByName(instance);
               if (fallbackNode) {
-                if (fallbackNode.type === 'TEXT') {
-                  await figma.loadFontAsync(fallbackNode.fontName as FontName);
-                  fallbackNode.characters = String(value);
-                } else if ('fills' in fallbackNode) {
-                  const cleanVal = getCleanFilename(String(value));
-                  const imgData = imageMap.get(cleanVal);
-                  if (imgData) {
+                if (isHyperlink) {
+                  if (fallbackNode.type === 'TEXT') {
                     try {
-                      const image = figma.createImage(imgData);
-                      fallbackNode.fills = [{
-                        type: 'IMAGE',
-                        scaleMode: 'FILL',
-                        imageHash: image.hash
-                      }];
+                      await figma.loadFontAsync(fallbackNode.fontName as FontName);
+                      if (value) {
+                        fallbackNode.hyperlink = {
+                          type: 'URL',
+                          value: String(value).trim()
+                        };
+                      } else {
+                        fallbackNode.hyperlink = null;
+                      }
                     } catch (err) {
-                      console.error('Error setting image fill in fallback:', err);
+                      console.error('Error setting fallback hyperlink:', err);
+                    }
+                  }
+                } else {
+                  if (fallbackNode.type === 'TEXT') {
+                    try {
+                      await figma.loadFontAsync(fallbackNode.fontName as FontName);
+                      fallbackNode.characters = String(value);
+                    } catch (err) {
+                      console.error('Font load error in fallback:', err);
+                    }
+                  } else if ('fills' in fallbackNode) {
+                    const cleanVal = getCleanFilename(String(value));
+                    const imgData = imageMap.get(cleanVal);
+                    if (imgData) {
+                      try {
+                        const image = figma.createImage(imgData);
+                        fallbackNode.fills = [{
+                          type: 'IMAGE',
+                          scaleMode: 'FILL',
+                          imageHash: image.hash
+                        }];
+                      } catch (err) {
+                        console.error('Error setting image fill in fallback:', err);
+                      }
                     }
                   }
                 }
