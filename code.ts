@@ -135,11 +135,27 @@ figma.ui.onmessage = async (msg) => {
   }
 
   if (msg.type === 'generate') {
-    const { data, typeColumn, mapping } = msg;
+    const { data, typeColumn, mapping, images } = msg;
 
     try {
       const nodes: SceneNode[] = [];
       const sectionFrames = new Map<string, FrameNode>();
+
+      // Populate image map for fast lookup
+      const imageMap = new Map<string, Uint8Array>();
+      if (images && Array.isArray(images)) {
+        for (const img of images) {
+          imageMap.set(img.name.toLowerCase().trim(), img.data);
+        }
+      }
+
+      const getCleanFilename = (val: string): string => {
+        if (!val) return '';
+        let name = val.split('/').pop() || val;
+        name = name.split('\\').pop() || name;
+        name = name.split('?')[0];
+        return name.toLowerCase().trim();
+      };
 
       for (const row of data) {
         const typeVal = row[typeColumn];
@@ -263,6 +279,21 @@ figma.ui.onmessage = async (msg) => {
                 } catch (err) {
                   console.error('Font load error:', err);
                 }
+              } else if ('fills' in targetNode) {
+                const cleanVal = getCleanFilename(String(value));
+                const imgData = imageMap.get(cleanVal);
+                if (imgData) {
+                  try {
+                    const image = figma.createImage(imgData);
+                    targetNode.fills = [{
+                      type: 'IMAGE',
+                      scaleMode: 'FILL',
+                      imageHash: image.hash
+                    }];
+                  } catch (err) {
+                    console.error('Error setting image fill:', err);
+                  }
+                }
               }
             } else {
               // Fallback to name search if path lookup fails (backward compatibility or minor changes)
@@ -277,9 +308,26 @@ figma.ui.onmessage = async (msg) => {
                 return null;
               };
               const fallbackNode = findByName(instance);
-              if (fallbackNode && fallbackNode.type === 'TEXT') {
-                await figma.loadFontAsync(fallbackNode.fontName as FontName);
-                fallbackNode.characters = String(value);
+              if (fallbackNode) {
+                if (fallbackNode.type === 'TEXT') {
+                  await figma.loadFontAsync(fallbackNode.fontName as FontName);
+                  fallbackNode.characters = String(value);
+                } else if ('fills' in fallbackNode) {
+                  const cleanVal = getCleanFilename(String(value));
+                  const imgData = imageMap.get(cleanVal);
+                  if (imgData) {
+                    try {
+                      const image = figma.createImage(imgData);
+                      fallbackNode.fills = [{
+                        type: 'IMAGE',
+                        scaleMode: 'FILL',
+                        imageHash: image.hash
+                      }];
+                    } catch (err) {
+                      console.error('Error setting image fill in fallback:', err);
+                    }
+                  }
+                }
               }
             }
           }

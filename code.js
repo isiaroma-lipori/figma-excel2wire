@@ -132,11 +132,28 @@ figma.ui.onmessage = async (msg) => {
         }
     }
     if (msg.type === 'generate') {
-        const { data, typeColumn, mapping } = msg;
+        const { data, typeColumn, mapping, images } = msg;
         try {
             const nodes = [];
             const sectionFrames = new Map();
             console.log('Generation started. Rows:', data.length);
+
+            // Populate image map for fast lookup
+            const imageMap = new Map();
+            if (images && Array.isArray(images)) {
+                for (const img of images) {
+                    imageMap.set(img.name.toLowerCase().trim(), img.data);
+                }
+            }
+
+            const getCleanFilename = (val) => {
+                if (!val) return '';
+                let name = val.split('/').pop() || val;
+                name = name.split('\\').pop() || name;
+                name = name.split('?')[0];
+                return name.toLowerCase().trim();
+            };
+
             for (const row of data) {
                 const typeVal = row[typeColumn];
                 const sectionName = row['section_name'] || 'General';
@@ -195,7 +212,7 @@ figma.ui.onmessage = async (msg) => {
                 const fields = config.fields || {};
                 for (const [targetKey, csvCol] of Object.entries(fields)) {
                     const value = row[csvCol];
-                    if (value === undefined || value === "")
+                    if (value === undefined)
                         continue;
                     if (propertyOwner.componentPropertyDefinitions[targetKey]) {
                         const propDef = propertyOwner.componentPropertyDefinitions[targetKey];
@@ -240,6 +257,60 @@ figma.ui.onmessage = async (msg) => {
                                 }
                                 catch (err) {
                                     console.error('Font load error:', err);
+                                }
+                            }
+                            else if ('fills' in targetNode) {
+                                const cleanVal = getCleanFilename(String(value));
+                                const imgData = imageMap.get(cleanVal);
+                                if (imgData) {
+                                    try {
+                                        const image = figma.createImage(imgData);
+                                        targetNode.fills = [{
+                                            type: 'IMAGE',
+                                            scaleMode: 'FILL',
+                                            imageHash: image.hash
+                                        }];
+                                    }
+                                    catch (err) {
+                                        console.error('Error setting image fill:', err);
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            // Fallback to name search if path lookup fails
+                            const findByName = (n) => {
+                                if (n.name === targetKey) return n;
+                                if (n.children) {
+                                    for (const c of n.children) {
+                                        const found = findByName(c);
+                                        if (found) return found;
+                                    }
+                                }
+                                return null;
+                            };
+                            const fallbackNode = findByName(instance);
+                            if (fallbackNode) {
+                                if (fallbackNode.type === 'TEXT') {
+                                    await figma.loadFontAsync(fallbackNode.fontName);
+                                    fallbackNode.characters = String(value);
+                                }
+                                else if ('fills' in fallbackNode) {
+                                    const cleanVal = getCleanFilename(String(value));
+                                    const imgData = imageMap.get(cleanVal);
+                                    if (imgData) {
+                                        try {
+                                            const image = figma.createImage(imgData);
+                                            fallbackNode.fills = [{
+                                                type: 'IMAGE',
+                                                scaleMode: 'FILL',
+                                                imageHash: image.hash
+                                            }];
+                                        }
+                                        catch (err) {
+                                            console.error('Error setting image fill in fallback:', err);
+                                        }
+                                    }
                                 }
                             }
                         }

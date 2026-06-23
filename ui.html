@@ -277,6 +277,15 @@
     </div>
   </div>
 
+  <!-- Step 1b: Loading Images -->
+  <div class="step-card">
+    <h1>1b. Carica immagini (Opzionale)</h1>
+    <div class="file-input-wrapper">
+      <div id="imagesStatus">Trascina o clicca per selezionare le immagini</div>
+      <input type="file" id="imageFiles" accept="image/*" multiple>
+    </div>
+  </div>
+
   <!-- Step 2: Selecting Type Column -->
   <div id="step2" class="step-card hidden">
     <h1>2. Colonna Identificativo Tipo</h1>
@@ -338,6 +347,7 @@
     let csvHeaders = [];
     let typeMappings = {}; // typeVal -> { componentKey: '', properties: [], fieldMap: {} }
     let savedMappings = [];
+    let uploadedImages = []; // Array of { name: string, data: Uint8Array }
 
     // Request mappings on startup
     window.onload = () => {
@@ -433,6 +443,34 @@
         if (select.value) handleTypeColChange(); 
       };
       reader.readAsText(file);
+    };
+
+    // Image Files Upload
+    document.getElementById('imageFiles').onchange = async (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
+      
+      document.getElementById('imagesStatus').textContent = `Caricamento di ${files.length} immagini...`;
+      uploadedImages = [];
+      
+      const promises = files.map(file => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const arrayBuffer = event.target.result;
+            const uint8Array = new Uint8Array(arrayBuffer);
+            uploadedImages.push({
+              name: file.name,
+              data: uint8Array
+            });
+            resolve();
+          };
+          reader.readAsArrayBuffer(file);
+        });
+      });
+      
+      await Promise.all(promises);
+      document.getElementById('imagesStatus').textContent = `${uploadedImages.length} immagini caricate con successo`;
     };
 
     function handleTypeColChange() {
@@ -827,7 +865,8 @@
         type: 'generate', 
         data: csvData.data, 
         typeColumn, 
-        mapping: finalMapping 
+        mapping: finalMapping,
+        images: uploadedImages
       } }, '*');
     };
   </script>
